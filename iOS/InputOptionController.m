@@ -44,6 +44,7 @@
 
 #import "InputOptionController.h"
 #import "Globals.h"
+#import "Options.h"
 #import "OptionsController.h"
 #import "ListOptionController.h"
 #import "EmulatorController.h"
@@ -52,10 +53,8 @@
 
 @implementation InputOptionController
 
-@synthesize emuController;
-
 - (id)init {
-    if (self = [super initWithStyle:UITableViewStyleGrouped]) {
+    if (self = [super init]) {
         
         switchAnimatedButtons=nil;
 
@@ -63,19 +62,15 @@
         arrayStickType = [[NSArray alloc] initWithObjects:@"Auto",@"2-Way",@"4-Way",@"8-Way", nil];
         arrayStickSizeValue = [[NSArray alloc] initWithObjects:@"Smaller", @"Small", @"Normal", @"Big", @"Bigger",nil];
         
-        arrayNumbuttons = [[NSArray alloc] initWithObjects:@"Auto",@"0 Buttons",@"1 Buttons",@"2 Buttons",@"3 Buttons",@"4 Buttons",@"All Buttons", nil];
+        arrayNumbuttons = [[NSArray alloc] initWithObjects:@"Auto",@"0 Buttons",@"1 Buttons",@"2 Buttons",@"3 Buttons",@"4 Buttons",@"5 Buttons",@"All Buttons",nil];
         switchAplusB = nil;
         arrayAutofireValue = [[NSArray alloc] initWithObjects:@"Disabled", @"Speed 1", @"Speed 2",@"Speed 3",
                               @"Speed 4", @"Speed 5",@"Speed 6",@"Speed 7",@"Speed 8",@"Speed 9",nil];
         arrayButtonSizeValue = [[NSArray alloc] initWithObjects:@"Smaller", @"Small", @"Normal", @"Big", @"Bigger",nil];
         
-        arrayControlType = [[NSArray alloc] initWithObjects:@"None",@"iCade",@"iCP, Gametel",@"iMpulse", nil];
-        
         switchP1aspx = nil;
         
-        switchTouchDeadZone = nil;
         arrayAnalogDZValue = [[NSArray alloc] initWithObjects:@"1", @"2", @"3",@"4", @"5", @"6", nil];
-        arrayBTDZValue = [[NSArray alloc] initWithObjects:@"1", @"2", @"3",@"4", @"5", @"6", nil];
         
         switchLightgunEnabled = nil;
         switchLightgunBottomScreenReload = nil;
@@ -87,73 +82,45 @@
         switchTurboLButtonEnabled = nil;
         switchTurboRButtonEnabled = nil;
         
+        switchTouchAnalogEnabled = nil;
+        switchTouchAnalogHideTouchButtons = nil;
+        switchTouchAnalogHideTouchDirectionalPad = nil;
+        sliderTouchAnalogSensitivity = nil;
+        
+        switchTouchDirectionalEnabled = nil;
+        
+        sliderTouchControlsOpacity = nil;
+        
         self.title = @"Input Options";
     }
     return self;
 }
 
-- (void)dealloc {
-    
-    [switchAnimatedButtons release];
-    [switchTouchDeadZone release];
-    [switchAplusB release];
-    [switchP1aspx release];
-    [arrayNumbuttons release];
-    [arrayStickType release];
-    [arrayTouchType release];
-    [arrayControlType release];
-    [arrayAnalogDZValue release];
-    [arrayBTDZValue release];
-    [arrayAutofireValue release];
-    [arrayButtonSizeValue release];
-    [arrayStickSizeValue release];
-    [switchLightgunEnabled release];
-    [switchTurboAButtonEnabled release];
-    [switchTurboBButtonEnabled release];
-    [switchTurboXButtonEnabled release];
-    [switchTurboYButtonEnabled release];
-    [switchTurboLButtonEnabled release];
-    [switchTurboRButtonEnabled release];
-    [switchLightgunBottomScreenReload release];
-    
-    [super dealloc];
-}
-
 - (void) viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    UITableView *tableView = (UITableView *)self.view;
-    [tableView reloadData];
+    [self.tableView reloadData];
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     
-    return 9;
-}
-
-- (void)loadView {
-    
-    [super loadView];
-    
-    UIBarButtonItem *button = [[UIBarButtonItem alloc] initWithTitle:@"Done"
-                                                               style:UIBarButtonItemStyleBordered
-                                                              target: emuController  action:  @selector(done:) ];
-    self.navigationItem.rightBarButtonItem = button;
-    [button release];
+    return 11;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
     switch (section)
     {
-        case 0: return 1;
+        case 0: return 2;
         case 1: return 3;
-        case 2: return 4;
+        case 2: return 5;
         case 3: return 1;
         case 4: return 2;
         case 5: return 1;
-        case 6: return 3-!g_btjoy_available;
+        case 6: return 1;
         case 7: return 2;
         case 8: return 6;
+        case 9: return 4;
+        case 10: return 1;
     }
     return -1;
 }
@@ -171,6 +138,8 @@
         case 6: return @"Dead Zone";
         case 7: return @"Touch Lightgun";
         case 8: return @"Turbo Mode Toggle";
+        case 9: return @"Touch Analog";
+        case 10: return @"Touch Directional Input";
     }
     return @"Error!";
 }
@@ -193,8 +162,7 @@
         if (indexPath.section == 7 && indexPath.row == 1 )
             style = UITableViewCellStyleSubtitle;
         
-        cell = [[[UITableViewCell alloc] initWithStyle:style
-                                       reuseIdentifier:@"CellIdentifier"] autorelease];
+        cell = [[UITableViewCell alloc] initWithStyle:style reuseIdentifier:@"CellIdentifier"];
         
         cell.accessoryType = UITableViewCellAccessoryNone;
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
@@ -206,13 +174,29 @@
     {
         case 0:
         {
-            cell.textLabel.text   = @"Animated";
-            [switchAnimatedButtons release];
-            switchAnimatedButtons  = [[UISwitch alloc] initWithFrame:CGRectZero];
-            cell.accessoryView = switchAnimatedButtons ;
-            [switchAnimatedButtons setOn:[op animatedButtons] animated:NO];
-            [switchAnimatedButtons addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
-            break;
+            if ( indexPath.row == 0 ) {
+                cell.textLabel.text   = @"Animated";
+                switchAnimatedButtons  = [[UISwitch alloc] initWithFrame:CGRectZero];
+                cell.accessoryView = switchAnimatedButtons ;
+                [switchAnimatedButtons setOn:[op animatedButtons] animated:NO];
+                [switchAnimatedButtons addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                break;
+            } else if (indexPath.row == 1 ) {
+                cell.textLabel.text = @"Opacity (Full Screen)";
+                sliderTouchControlsOpacity = [[UISlider alloc] initWithFrame:CGRectZero];
+                [sliderTouchControlsOpacity setMinimumValue:0.0];
+                [sliderTouchControlsOpacity setMaximumValue:100.0];
+                [sliderTouchControlsOpacity setValue:[op touchControlsOpacity]];
+                [sliderTouchControlsOpacity addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                sliderTouchControlsOpacity.translatesAutoresizingMaskIntoConstraints = NO;
+                [cell.contentView addSubview:sliderTouchControlsOpacity];
+                UIView *cellContentView = cell.contentView;
+                NSDictionary *viewBindings = NSDictionaryOfVariableBindings(cellContentView,sliderTouchControlsOpacity);
+                [cell.contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:[sliderTouchControlsOpacity]-8@750-|" options:0 metrics:nil views:viewBindings]];
+                [cell.contentView addConstraint:[NSLayoutConstraint constraintWithItem:sliderTouchControlsOpacity attribute:NSLayoutAttributeCenterY relatedBy:NSLayoutRelationEqual toItem:cell.contentView attribute:NSLayoutAttributeCenterY multiplier:1.0 constant:0.0]];
+                [sliderTouchControlsOpacity addConstraint:[NSLayoutConstraint constraintWithItem:sliderTouchControlsOpacity attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1.0 constant:100.0]];
+                break;
+            }
         }
         case 1:
         {
@@ -258,7 +242,6 @@
                 case 1:
                 {
                     cell.textLabel.text   = @"Button A = B + X";
-                    [switchAplusB release];
                     switchAplusB  = [[UISwitch alloc] initWithFrame:CGRectZero];
                     cell.accessoryView = switchAplusB ;
                     [switchAplusB setOn:[op aplusb] animated:NO];
@@ -268,7 +251,7 @@
                 case 2:
                 {
                     
-                    cell.textLabel.text   = @"Button B as Autofire";
+                    cell.textLabel.text   = @"Button A as Autofire";
                     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
                     cell.detailTextLabel.text = [arrayAutofireValue objectAtIndex:op.autofire];
                     break;
@@ -280,6 +263,16 @@
                     cell.detailTextLabel.text = [arrayButtonSizeValue objectAtIndex:op.buttonSize];
                     break;
                 }
+                case 4:
+                {
+                    cell.textLabel.text   = @"Nintendo Button Layout";
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                    switchBAYX  = [[UISwitch alloc] initWithFrame:CGRectZero];
+                    cell.accessoryView = switchBAYX;
+                    [switchBAYX setOn:[op nintendoBAYX] animated:NO];
+                    [switchBAYX addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    break;
+                }
             }
             break;
         }
@@ -287,9 +280,10 @@
         {
             cell.textLabel.text   = @"External Controller";
             cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-            cell.detailTextLabel.text = [arrayControlType objectAtIndex:op.controltype];
+            cell.detailTextLabel.text = [Options.arrayControlType optionAtIndex:op.controltype];
             break;
         }
+            break;
         case 4:
         {
             switch (indexPath.row)
@@ -297,14 +291,14 @@
                 {
                     cell.selectionStyle = UITableViewCellSelectionStyleBlue;
                     cell.textLabel.text = @"Change Current Layout";
-                    cell.textLabel.textAlignment = UITextAlignmentCenter;
+                    cell.textLabel.textAlignment = NSTextAlignmentCenter;
                     break;
                 }
                 case 1:
                 {
                     cell.selectionStyle = UITableViewCellSelectionStyleBlue;
                     cell.textLabel.text = @"Reset Current Layout to Default";
-                    cell.textLabel.textAlignment = UITextAlignmentCenter;
+                    cell.textLabel.textAlignment = NSTextAlignmentCenter;
                     break;
                 }
             }
@@ -313,7 +307,6 @@
         case 5:
         {
             cell.textLabel.text   = @"P1 as P2,P3,P4";
-            [switchP1aspx release];
             switchP1aspx  = [[UISwitch alloc] initWithFrame:CGRectZero];
             cell.accessoryView = switchP1aspx ;
             [switchP1aspx setOn:[op p1aspx] animated:NO];
@@ -325,30 +318,9 @@
             switch (indexPath.row)
             {   case 0:
                 {
-                    cell.textLabel.text   = @"Touch DPAD";
-                    [switchTouchDeadZone release];
-                    switchTouchDeadZone  = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchTouchDeadZone ;
-                    [switchTouchDeadZone setOn:[op touchDeadZone] animated:NO];
-                    [switchTouchDeadZone addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
-                    break;
-                }
-                case 1:
-                {
                     cell.textLabel.text   = @"Touch Stick";
                     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
                     cell.detailTextLabel.text = [arrayAnalogDZValue objectAtIndex:op.analogDeadZoneValue];
-                    break;
-                }
-                case 2:
-                {
-                    if(g_btjoy_available)
-                    {
-                        cell.textLabel.text   = @"BT Analog";
-                        
-                        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-                        cell.detailTextLabel.text = [arrayBTDZValue objectAtIndex:op.btDeadZoneValue];
-                    }
                     break;
                 }
             }
@@ -361,7 +333,6 @@
                 case 0:
                 {
                     cell.textLabel.text = @"Enabled";
-                    [switchLightgunEnabled release];
                     switchLightgunEnabled = [[UISwitch alloc] initWithFrame:CGRectZero];
                     [switchLightgunEnabled setOn:[op lightgunEnabled]];
                     [switchLightgunEnabled addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
@@ -372,7 +343,6 @@
                 {
                     cell.textLabel.text = @"Bottom Screen Reload";
                     cell.detailTextLabel.text = @"Some games require shooting offscreen to reload";
-                    [switchLightgunBottomScreenReload release];
                     switchLightgunBottomScreenReload = [[UISwitch alloc] initWithFrame:CGRectZero];
                     [switchLightgunBottomScreenReload setOn:[op lightgunBottomScreenReload]];
                     [switchLightgunBottomScreenReload addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
@@ -389,7 +359,6 @@
                 case 0:
                 {
                     cell.textLabel.text = @"X";
-                    [switchTurboXButtonEnabled release];
                     switchTurboXButtonEnabled = [[UISwitch alloc] initWithFrame:CGRectZero];
                     [switchTurboXButtonEnabled setOn:[op turboXEnabled]];
                     [switchTurboXButtonEnabled addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
@@ -399,7 +368,6 @@
                 case 1:
                 {
                     cell.textLabel.text = @"Y";
-                    [switchTurboYButtonEnabled release];
                     switchTurboYButtonEnabled = [[UISwitch alloc] initWithFrame:CGRectZero];
                     [switchTurboYButtonEnabled setOn:[op turboYEnabled]];
                     [switchTurboYButtonEnabled addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
@@ -409,7 +377,6 @@
                 case 2:
                 {
                     cell.textLabel.text = @"A";
-                    [switchTurboAButtonEnabled release];
                     switchTurboAButtonEnabled = [[UISwitch alloc] initWithFrame:CGRectZero];
                     [switchTurboAButtonEnabled setOn:[op turboAEnabled]];
                     [switchTurboAButtonEnabled addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
@@ -419,7 +386,6 @@
                 case 3:
                 {
                     cell.textLabel.text = @"B";
-                    [switchTurboBButtonEnabled release];
                     switchTurboBButtonEnabled = [[UISwitch alloc] initWithFrame:CGRectZero];
                     [switchTurboBButtonEnabled setOn:[op turboBEnabled]];
                     [switchTurboBButtonEnabled addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
@@ -429,7 +395,6 @@
                 case 4:
                 {
                     cell.textLabel.text = @"L";
-                    [switchTurboLButtonEnabled release];
                     switchTurboLButtonEnabled = [[UISwitch alloc] initWithFrame:CGRectZero];
                     [switchTurboLButtonEnabled setOn:[op turboLEnabled]];
                     [switchTurboLButtonEnabled addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
@@ -439,7 +404,6 @@
                 case 5:
                 {
                     cell.textLabel.text = @"R";
-                    [switchTurboRButtonEnabled release];
                     switchTurboRButtonEnabled = [[UISwitch alloc] initWithFrame:CGRectZero];
                     [switchTurboRButtonEnabled setOn:[op turboREnabled]];
                     [switchTurboRButtonEnabled addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
@@ -447,10 +411,70 @@
                     break;
                 }
             }
+            break;
+        }
+        case 9:
+        {
+            switch (indexPath.row)
+            {
+                case 0:
+                {
+                    cell.textLabel.text = @"Enabled";
+                    switchTouchAnalogEnabled = [[UISwitch alloc] initWithFrame:CGRectZero];
+                    [switchTouchAnalogEnabled setOn:[op touchAnalogEnabled]];
+                    [switchTouchAnalogEnabled addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.accessoryView = switchTouchAnalogEnabled;
+                    break;
+                }
+                case 1:
+                {
+                    cell.textLabel.text = @"Sensitivity";
+                    sliderTouchAnalogSensitivity = [[UISlider alloc] initWithFrame:CGRectZero];
+                    [sliderTouchAnalogSensitivity setMinimumValue:100.0];
+                    [sliderTouchAnalogSensitivity setMaximumValue:1000.0];
+                    [sliderTouchAnalogSensitivity setValue:[op touchAnalogSensitivity]];
+                    [sliderTouchAnalogSensitivity addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    sliderTouchAnalogSensitivity.translatesAutoresizingMaskIntoConstraints = NO;
+                    [cell.contentView addSubview:sliderTouchAnalogSensitivity];
+                    UIView *cellContentView = cell.contentView;
+                    NSDictionary *viewBindings = NSDictionaryOfVariableBindings(cellContentView,sliderTouchAnalogSensitivity);
+                    [cell.contentView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:[sliderTouchAnalogSensitivity]-8@750-|" options:0 metrics:nil views:viewBindings]];
+                    [cell.contentView addConstraint:[NSLayoutConstraint constraintWithItem:sliderTouchAnalogSensitivity attribute:NSLayoutAttributeCenterY relatedBy:NSLayoutRelationEqual toItem:cell.contentView attribute:NSLayoutAttributeCenterY multiplier:1.0 constant:0.0]];
+                    [sliderTouchAnalogSensitivity addConstraint:[NSLayoutConstraint constraintWithItem:sliderTouchAnalogSensitivity attribute:NSLayoutAttributeWidth relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1.0 constant:100.0]];
+                    break;
+                }
+                case 2:
+                {
+                    cell.textLabel.text = @"Hide Touch D-Pad";
+                    switchTouchAnalogHideTouchDirectionalPad = [[UISwitch alloc] initWithFrame:CGRectZero];
+                    [switchTouchAnalogHideTouchDirectionalPad setOn:[op touchAnalogHideTouchDirectionalPad]];
+                    [switchTouchAnalogHideTouchDirectionalPad addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.accessoryView = switchTouchAnalogHideTouchDirectionalPad;
+                    break;
+                }
+                case 3:
+                {
+                    cell.textLabel.text = @"Hide Touch Buttons";
+                    switchTouchAnalogHideTouchButtons = [[UISwitch alloc] initWithFrame:CGRectZero];
+                    [switchTouchAnalogHideTouchButtons setOn:[op touchAnalogHideTouchButtons]];
+                    [switchTouchAnalogHideTouchButtons addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.accessoryView = switchTouchAnalogHideTouchButtons;
+                    break;
+                }
+                break;
+            }
+            break;
+        }
+        case 10:
+        {
+            cell.textLabel.text = @"Enabled";
+            switchTouchDirectionalEnabled = [[UISwitch alloc] initWithFrame:CGRectZero];
+            [switchTouchDirectionalEnabled setOn:[op touchDirectionalEnabled]];
+            [switchTouchDirectionalEnabled addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+            cell.accessoryView = switchTouchDirectionalEnabled;
+            break;
         }
     }
-    
-    [op release];
     
     return cell;
 }
@@ -461,8 +485,6 @@
     
 	if(sender == switchAnimatedButtons)
         op.animatedButtons=  [switchAnimatedButtons isOn];
-	if(sender == switchTouchDeadZone)
-        op.touchDeadZone = [switchTouchDeadZone isOn];
     if(sender == switchAplusB)
         op.aplusb = [switchAplusB isOn];
     if(sender == switchP1aspx)
@@ -483,9 +505,22 @@
         op.turboLEnabled = [switchTurboLButtonEnabled isOn];
     if(sender == switchTurboRButtonEnabled)
         op.turboREnabled = [switchTurboRButtonEnabled isOn];
+    if (sender == switchTouchAnalogEnabled)
+        op.touchAnalogEnabled = [switchTouchAnalogEnabled isOn];
+    if(sender == sliderTouchAnalogSensitivity)
+        op.touchAnalogSensitivity = [sliderTouchAnalogSensitivity value];
+    if (sender == switchTouchAnalogHideTouchButtons)
+        op.touchAnalogHideTouchButtons = [switchTouchAnalogHideTouchButtons isOn];
+    if (sender == switchTouchAnalogHideTouchDirectionalPad)
+        op.touchAnalogHideTouchDirectionalPad = [switchTouchAnalogHideTouchDirectionalPad isOn];
+    if (sender == switchTouchDirectionalEnabled)
+        op.touchDirectionalEnabled = [switchTouchDirectionalEnabled isOn];
+    if ( sender == sliderTouchControlsOpacity )
+        op.touchControlsOpacity = [sliderTouchControlsOpacity value];
+    if(sender == switchBAYX)
+        op.nintendoBAYX = [sender isOn];
 
     [op saveOptions];
-	[op release];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -497,21 +532,18 @@
     {
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped type:kTypeTouchType list:arrayTouchType];
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     if(section==1 && row==1)
     {
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
                                                                                     type:kTypeStickType list:arrayStickType];
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     if(section==1 && row==2)
     {
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
                                                                                       type:kTypeStickSizeValue list:arrayStickSizeValue];
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     
     
@@ -520,14 +552,12 @@
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
                                                                                       type:kTypeNumButtons list:arrayNumbuttons];
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     if(section==2 && row==2)
     {
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
                                                                                       type:kTypeAutofireValue list:arrayAutofireValue];
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     
     if(section==2 && row==3)
@@ -535,41 +565,30 @@
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
                                                                                       type:kTypeButtonSizeValue list:arrayButtonSizeValue];
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
 
     if(section==3 && row==0)
     {
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
-                                                                                      type:kTypeControlType list:arrayControlType];
+                                                                                      type:kTypeControlType list:Options.arrayControlType];
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     
     if(section==4 && row==0)
     {
-        [emuController beginCustomizeCurrentLayout];
-        [tableView reloadData];
+        [self.emuController beginCustomizeCurrentLayout];
     }
     if(section==4 && row==1)
     {
-        [emuController resetCurrentLayout];
+        [self.emuController resetCurrentLayout];
         [tableView reloadData];
     }
 
-    if(section==6 && row==1)
+    if(section==6 && row==0)
     {
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
                                                                                       type:kTypeAnalogDZValue list:arrayAnalogDZValue];
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
-    }
-    if(section==6 && row==2)
-    {
-        ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
-                                                                                      type:kTypeBTDZValue list:arrayBTDZValue];
-        [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
 
     

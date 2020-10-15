@@ -156,7 +156,9 @@ static const NSString * CSToastQueueKey             = @"CSToastQueueKey";
         UITapGestureRecognizer *recognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(cs_handleToastTapped:)];
         [toast addGestureRecognizer:recognizer];
         toast.userInteractionEnabled = YES;
+#ifndef TARGET_OS_TV
         toast.exclusiveTouch = YES;
+#endif
     }
     
     [[self cs_activeToasts] addObject:toast];
@@ -374,6 +376,11 @@ static const NSString * CSToastQueueKey             = @"CSToastQueueKey";
 
 #pragma mark - Activity Methods
 
+#if __IPHONE_OS_VERSION_MIN_REQUIRED < __IPHONE_13_0
+#define UIActivityIndicatorViewStyleMedium UIActivityIndicatorViewStyleWhite
+#define UIActivityIndicatorViewStyleLarge UIActivityIndicatorViewStyleWhiteLarge
+#endif
+
 - (void)makeToastActivity:(id)position {
     // sanity
     UIView *existingActivityView = (UIView *)objc_getAssociatedObject(self, &CSToastActivityViewKey);
@@ -395,7 +402,7 @@ static const NSString * CSToastQueueKey             = @"CSToastQueueKey";
         activityView.layer.shadowOffset = style.shadowOffset;
     }
     
-    UIActivityIndicatorView *activityIndicatorView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+    UIActivityIndicatorView *activityIndicatorView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleLarge];
     activityIndicatorView.center = CGPointMake(activityView.bounds.size.width / 2, activityView.bounds.size.height / 2);
     [activityView addSubview:activityIndicatorView];
     [activityIndicatorView startAnimating];

@@ -44,85 +44,51 @@
 
 #import "DefaultOptionController.h"
 #import "Globals.h"
+#import "Options.h"
+#if TARGET_OS_IOS
 #import "OptionsController.h"
+#elif TARGET_OS_TV
+#import "TVOptionsController.h"
+#endif
 #import "ListOptionController.h"
 #import "EmulatorController.h"
 
 #include "myosd.h"
 
-@implementation DefaultOptionController
+@implementation DefaultOptionController {
 
-@synthesize emuController;
+    NSArray  *arraySoundValue;
+    NSArray  *arrayVideoPriorityValue;
+    NSArray  *arrayMainPriorityValue;
+    
+    NSArray  *arrayMainThreadTypeValue;
+    NSArray  *arrayVideoThreadTypeValue;
+    
+}
+
 
 - (id)init {
-    if (self = [super initWithStyle:UITableViewStyleGrouped]) {
-        
-        switchTvoutNative = nil;
-        switchCheats = nil;
+    if (self = [super init]) {
+
         arraySoundValue = [[NSArray alloc] initWithObjects:@"Off", @"On (11 KHz)", @"On (22 KHz)",@"On (33 KHz)", @"On (44 KHz)", @"On (48 KHz)", nil];
         arrayMainPriorityValue = [[NSArray alloc] initWithObjects:@"0", @"1", @"2", @"3",@"4", @"5", @"6", @"7", @"8", @"9", @"10",nil];
         arrayVideoPriorityValue = [[NSArray alloc] initWithObjects:@"0", @"1", @"2", @"3",@"4", @"5", @"6", @"7", @"8", @"9", @"10",nil];
-        switchVsync = nil;
-        switchThreaded = nil;
-        switchDblbuff = nil;
-        switchHiscore = nil;
-        
-        switchVAntialias = nil;
-        switchVBean2x = nil;
-        switchVFlicker = nil;
         
         arrayMainThreadTypeValue = [[NSArray alloc] initWithObjects:@"Normal", @"Real Time RR", @"Real Time FIFO",nil];
         arrayVideoThreadTypeValue = [[NSArray alloc] initWithObjects:@"Normal", @"Real Time RR", @"Real Time FIFO",nil];
         
-        self.title = @"Default Options";
     }
     return self;
 }
 
-- (void)dealloc {
-    
-    [switchTvoutNative release];
-    [switchCheats release];
-    [arraySoundValue release];
-    [switchVsync release];
-    [switchThreaded release];
-    [switchDblbuff release];
-    
-    [arrayMainPriorityValue release];
-    [arrayVideoPriorityValue release];
-    
-    [switchHiscore release];
-    
-    [switchVBean2x release];
-    [switchVAntialias release];
-    [switchVFlicker release];
-    
-    [arrayVideoThreadTypeValue release];
-    [arrayMainThreadTypeValue release];
-    
-    [super dealloc];
-}
-
-- (void) viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-    UITableView *tableView = (UITableView *)self.view;
-    [tableView reloadData];
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.title = @"Default Options";
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     
     return 3;
-}
-
-- (void)loadView {
-    
-    [super loadView];
-    
-    UIBarButtonItem *button = [[UIBarButtonItem alloc] initWithTitle:@"Done"
-                                                               style:UIBarButtonItemStyleBordered
-                                                              target: emuController  action:  @selector(done:) ];
-    self.navigationItem.rightBarButtonItem = button;
-    [button release];
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
@@ -149,22 +115,11 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     
-    NSString *cellIdentifier = [NSString stringWithFormat: @"%d:%d", [indexPath indexAtPosition:0], [indexPath indexAtPosition:1]];
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
-    
-    if (cell == nil)
-    {
-        
-        UITableViewCellStyle style;
-        
-        style = UITableViewCellStyleValue1;
-        
-        cell = [[[UITableViewCell alloc] initWithStyle:style
-                                       reuseIdentifier:@"CellIdentifier"] autorelease];
-        
-        cell.accessoryType = UITableViewCellAccessoryNone;
-        cell.selectionStyle = UITableViewCellSelectionStyleNone;
-    }
+    UITableViewCell* cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
+
+    cell.accessoryType = UITableViewCellAccessoryNone;
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    cell.accessoryView = nil;
     
     Options *op = [[Options alloc] init];
     
@@ -175,33 +130,21 @@
             switch (indexPath.row)
             {   case 0:
                 {
-                    cell.textLabel.text  = @"Beam 2x";
-                    [switchVBean2x release];
-                    switchVBean2x = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchVBean2x;
-                    [switchVBean2x setOn:[op vbean2x] animated:NO];
-                    [switchVBean2x addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.textLabel.text = @"Beam 2x";
+                    cell.accessoryView = [self optionSwitchForKey:@"vbean2x"];
                     break;
                 }
                     
                 case 1:
                 {
-                    cell.textLabel.text   = @"Antialias";
-                    [switchVAntialias release];
-                    switchVAntialias  = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchVAntialias ;
-                    [switchVAntialias setOn:[op vantialias] animated:NO];
-                    [switchVAntialias addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.textLabel.text = @"Antialias";
+                    cell.accessoryView = [self optionSwitchForKey:@"vantialias"];
                     break;
                 }
                 case 2:
                 {
-                    cell.textLabel.text   = @"Flicker";
-                    [switchVFlicker release];
-                    switchVFlicker  = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchVFlicker ;
-                    [switchVFlicker setOn:[op vflicker] animated:NO];
-                    [switchVFlicker addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.textLabel.text = @"Flicker";
+                    cell.accessoryView = [self optionSwitchForKey:@"vflicker"];
                     break;
                 }
             }
@@ -214,38 +157,26 @@
                 {
                     cell.textLabel.text   = @"Sound";
                     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-                    cell.detailTextLabel.text = [arraySoundValue objectAtIndex:op.soundValue];
+                    cell.detailTextLabel.text = [arraySoundValue optionAtIndex:op.soundValue];
                     break;
                 }
                     
                 case 1:
                 {
-                    cell.textLabel.text   = @"Cheats";
-                    [switchCheats release];
-                    switchCheats  = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchCheats ;
-                    [switchCheats setOn:[op cheats] animated:NO];
-                    [switchCheats addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.textLabel.text = @"Cheats";
+                    cell.accessoryView = [self optionSwitchForKey:@"cheats"];
                     break;
                 }
                 case 2:
                 {
                     cell.textLabel.text   = @"Force 60Hz Sync";
-                    [switchVsync release];
-                    switchVsync  = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchVsync ;
-                    [switchVsync setOn:[op vsync] animated:NO];
-                    [switchVsync addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.accessoryView = [self optionSwitchForKey:@"vsync"];
                     break;
                 }
                 case 3:
                 {
                     cell.textLabel.text   = @"Save Hiscores";
-                    [switchHiscore release];
-                    switchHiscore  = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchHiscore ;
-                    [switchHiscore setOn:[op hiscore] animated:NO];
-                    [switchHiscore addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.accessoryView = [self optionSwitchForKey:@"hiscore"];
                     break;
                 }
             }
@@ -257,60 +188,48 @@
             {   case 0:
                 {
                     cell.textLabel.text   = @"Native TV-OUT";
-                    [switchTvoutNative release];
-                    switchTvoutNative  = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchTvoutNative ;
-                    [switchTvoutNative setOn:[op tvoutNative] animated:NO];
-                    [switchTvoutNative addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.accessoryView = [self optionSwitchForKey:@"tvoutNative"];
                     break;
                 }
                     
                 case 1:
                 {
                     cell.textLabel.text   = @"Threaded Video";
-                    [switchThreaded release];
-                    switchThreaded  = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchThreaded ;
-                    [switchThreaded setOn:[op threaded] animated:NO];
-                    [switchThreaded addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.accessoryView = [self optionSwitchForKey:@"threaded"];
                     break;
                 }
                 case 2:
                 {
                     cell.textLabel.text   = @"Video Thread Priority";
                     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-                    cell.detailTextLabel.text = [arrayVideoPriorityValue objectAtIndex:op.videoPriority];
+                    cell.detailTextLabel.text = [arrayVideoPriorityValue optionAtIndex:op.videoPriority];
                     break;
                 }
                 case 3:
                 {
                     cell.textLabel.text   = @"Video Thread Type";
                     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-                    cell.detailTextLabel.text = [arrayVideoThreadTypeValue objectAtIndex:op.videoThreadType];
+                    cell.detailTextLabel.text = [arrayVideoThreadTypeValue optionAtIndex:op.videoThreadType];
                     break;
                 }
                 case 4:
                 {
                     cell.textLabel.text   = @"Double Buffer";
-                    [switchDblbuff release];
-                    switchDblbuff  = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchDblbuff ;
-                    [switchDblbuff setOn:[op dblbuff] animated:NO];
-                    [switchDblbuff addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.accessoryView = [self optionSwitchForKey:@"dblbuff"];
                     break;
                 }
                 case 5:
                 {
                     cell.textLabel.text   = @"Main Thread Priority";
                     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-                    cell.detailTextLabel.text = [arrayMainPriorityValue objectAtIndex:op.mainPriority];
+                    cell.detailTextLabel.text = [arrayMainPriorityValue optionAtIndex:op.mainPriority];
                     break;
                 }
                 case 6:
                 {
                     cell.textLabel.text   = @"Main Thread Type";
                     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-                    cell.detailTextLabel.text = [arrayMainThreadTypeValue objectAtIndex:op.mainThreadType];
+                    cell.detailTextLabel.text = [arrayMainThreadTypeValue optionAtIndex:op.mainThreadType];
                     break;
                 }
             }
@@ -318,44 +237,7 @@
         }
     }
     
-    [op release];
-    
     return cell;
-}
-
-- (void)optionChanged:(id)sender
-{
-    Options *op = [[Options alloc] init];
-    
-	if(sender == switchTvoutNative)
-        op.tvoutNative = [switchTvoutNative isOn];
-    
-    if(sender == switchCheats)
-        op.cheats = [switchCheats isOn];
-    
-    if(sender == switchVsync)
-        op.vsync = [switchVsync isOn];
-    
-    if(sender == switchThreaded)
-        op.threaded = [switchThreaded isOn];
-    
-    if(sender == switchDblbuff)
-        op.dblbuff = [switchDblbuff isOn];
-    
-    if(sender == switchHiscore)
-        op.hiscore = [switchHiscore isOn];
-    
-    if(sender == switchVBean2x)
-        op.vbean2x = [switchVBean2x isOn];
-    
-    if(sender == switchVAntialias)
-        op.vantialias = [switchVAntialias isOn];
-    
-    if(sender == switchVFlicker)
-        op.vflicker = [switchVFlicker isOn];
-    
-    [op saveOptions];
-	[op release];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -363,36 +245,36 @@
     NSUInteger row = [indexPath row];
     NSUInteger section = [indexPath section];
     
+#if TARGET_OS_TV
+    UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+    [self toggleOptionSwitch:cell.accessoryView];
+#endif
+    
     if(section==1 && row==0)
     {
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
                                                                                       type:kTypeSoundValue list:arraySoundValue];
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     if (section==2 && row==2){
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
                                                                                       type:kTypeVideoPriorityValue list:arrayVideoPriorityValue];
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     if (section==2 && row==3){
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
                                                                                       type:kTypeVideoThreadTypeValue list:arrayVideoThreadTypeValue];
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     if (section==2 && row==5){
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
                                                                                       type:kTypeMainPriorityValue list:arrayMainPriorityValue];
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     if (section==2 && row==6){
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
                                                                                       type:kTypeMainThreadTypeValue list:arrayMainThreadTypeValue];
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
 
 }

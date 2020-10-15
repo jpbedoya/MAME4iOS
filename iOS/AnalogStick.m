@@ -49,10 +49,8 @@
 
 @implementation AnalogStickView
 
-
 - (void) updateAnalog
 {
-
     switch(g_pref_analog_DZ_value)
     {
       case 0: deadZone = 0.01f;break;
@@ -65,16 +63,6 @@
 
 	if(mag >= deadZone)
 	{
-        if(g_pref_input_touch_type==TOUCH_INPUT_ANALOG)
-		{
-           joy_analog_x[0][0] = rx;
-           if(!STICK2WAY)
-		      joy_analog_y[0][0] = ry * -1.0f;
-           else
-              joy_analog_y[0][0] = 0;
-           //printf("Sending analog %f, %f...\n",joy_analog_x[0],joy_analog_y[0] );
-		}
-
 		float v = ang;
 		
 		if(STICK2WAY)
@@ -183,7 +171,23 @@
                 myosd_pad_status &= ~MYOSD_UP;
 		        myosd_pad_status &= ~MYOSD_RIGHT;
 			}
-		}												
+		}
+        
+        if(g_pref_input_touch_type==TOUCH_INPUT_ANALOG)
+        {
+           joy_analog_x[0][0] = rx;
+           if(!STICK2WAY)
+              joy_analog_y[0][0] = ry * -1.0f;
+           else
+              joy_analog_y[0][0] = 0;
+           //printf("Sending analog %f, %f...\n",joy_analog_x[0],joy_analog_y[0] );
+        }
+        else
+        {
+            // emulate a analog joystick, and a dpad so games that require analog will work with dpad, and viz viz
+            joy_analog_y[0][0] = (myosd_pad_status & MYOSD_UP)    ? +1.0 : (myosd_pad_status & MYOSD_DOWN) ? -1.0 : 0.0;
+            joy_analog_x[0][0] = (myosd_pad_status & MYOSD_RIGHT) ? +1.0 : (myosd_pad_status & MYOSD_LEFT) ? -1.0 : 0.0;
+        }
 	}
 	else
 	{
@@ -197,21 +201,33 @@
 	    myosd_pad_status &= ~MYOSD_RIGHT;		    	    				    
 	}
 					
-	switch (myosd_pad_status & (MYOSD_UP|MYOSD_DOWN|MYOSD_LEFT|MYOSD_RIGHT))
-    {
-        case    MYOSD_UP:    currentDirection = StickUp; break;
-        case    MYOSD_DOWN:  currentDirection = StickDown; break;
-        case    MYOSD_LEFT:  currentDirection = StickLeft; break;
-        case    MYOSD_RIGHT: currentDirection = StickRight; break;
-            
-        case    MYOSD_UP | MYOSD_LEFT:  currentDirection = StickUpLeft; break;
-        case    MYOSD_UP | MYOSD_RIGHT: currentDirection = StickUpRight; break;
-        case    MYOSD_DOWN | MYOSD_LEFT:  currentDirection = StickDownLeft; break;
-        case    MYOSD_DOWN | MYOSD_RIGHT: currentDirection = StickDownRight; break;
-            
-        default: currentDirection = StickNone;
+}
+
+// get the image to use for the stick based on the position.
+- (UIImage*)getStickImage {
+    NSString* base = @"stick-";
+    NSString* zero = @"inner.png";
+
+    if (g_pref_input_touch_type == TOUCH_INPUT_DPAD) {
+        base = @"DPad_";
+        zero = @"NotPressed.png";
     }
-    					 
+    
+    NSString* ext = zero;
+    switch ((myosd_pad_status | myosd_joy_status[0]) & (MYOSD_UP|MYOSD_DOWN|MYOSD_LEFT|MYOSD_RIGHT))
+    {
+        case MYOSD_UP:    ext = @"U.png"; break;
+        case MYOSD_DOWN:  ext = @"D.png"; break;
+        case MYOSD_LEFT:  ext = @"L.png"; break;
+        case MYOSD_RIGHT: ext = @"R.png"; break;
+            
+        case MYOSD_UP | MYOSD_LEFT:  ext = @"UL.png"; break;
+        case MYOSD_UP | MYOSD_RIGHT: ext = @"UR.png"; break;
+        case MYOSD_DOWN | MYOSD_LEFT:  ext = @"DL.png"; break;
+        case MYOSD_DOWN | MYOSD_RIGHT: ext = @"DR.png"; break;
+    }
+                         
+    return [emuController loadImage:[base stringByAppendingString:ext]] ?: [emuController loadImage:[base stringByAppendingString:zero]];
 }
 
 - (id)initWithFrame:(CGRect)frame withEmuController:(EmulatorController*)emulatorController{
@@ -221,129 +237,38 @@
         
         emuController = emulatorController;
         
-        //CGRect rStickArea = emuController.rStickArea;
-        CGRect rStickArea = frame;
+        innerView = [ [ UIImageView alloc ] initWithImage:[self getStickImage]];
+        [self addSubview: innerView];
         
-        ptMin.x = rStickArea.origin.x - frame.origin.x;
-        ptMin.y = rStickArea.origin.y - frame.origin.y;
-        ptMax.x = ptMin.x + rStickArea.size.width;
-        ptMax.y = ptMin.y + rStickArea.size.height;
-        ptCenter.x = (rStickArea.size.width/ 2) + ptMin.x;
-        ptCenter.y = (rStickArea.size.height / 2) + ptMin.y;
-        CGRect rImg = CGRectMake(ptMin.x,ptMin.y,rStickArea.size.width,rStickArea.size.height);
-        
-        //ptMax = CGPointMake(self.bounds.size.width, self.bounds.size.height);
-        //ptCenter = CGPointMake(self.bounds.size.width/2, self.bounds.size.height/2);
-        
-        NSString *name;
-        
-        if((g_device_is_landscape && g_pref_full_screen_land) || (!g_device_is_landscape && g_pref_full_screen_port) /*|| iOS_skin==1*/)
+        if (g_device_is_fullscreen)
         {
-            name = [NSString stringWithFormat:@"./SKIN_%d/%@",g_pref_skin,@"./stick-outer.png"];
-            outerView = [ [ UIImageView alloc ] initWithImage:[emuController loadImage: name]];
-            //outerView.frame = CGRectMake(0,0,frame.size.width,frame.size.height);//frame;
-            outerView.frame = rImg;//frame;
-            
+            outerView = [ [ UIImageView alloc ] initWithImage:[emuController loadImage:@"stick-outer.png"]];
+            [self insertSubview:outerView belowSubview:innerView];
+
             [outerView setAlpha:((float)g_controller_opacity / 100.0f)];
-            
-            [self addSubview: outerView];
+            [innerView setAlpha:((float)g_controller_opacity / 100.0f)];
         }
         
-        int stick_radio = emuController.stick_radio;
-        
-        name = [NSString stringWithFormat:@"./SKIN_%d/%@",g_pref_skin,@"./stick-inner.png"];
-        stickWidth =  rImg.size.width * (stick_radio/100.0f);//0.60;
-        stickHeight = rImg.size.height * (stick_radio/100.0f);//0.60;
-        innerView = [ [ UIImageView alloc ] initWithImage:[emuController loadImage: name]];
-        [self calculateStickPosition: ptCenter];
-        innerView.frame =  stickPos;
-        
-        if((g_device_is_landscape && g_pref_full_screen_land) || (!g_device_is_landscape && g_pref_full_screen_port))
-            [innerView setAlpha:((float)g_controller_opacity / 100.0f)];
-        
-        [self addSubview: innerView];
+        self.multipleTouchEnabled = YES;
     }
-    
-    //self.exclusiveTouch = YES;
-    self.multipleTouchEnabled = YES;//NO;
-	//self.userInteractionEnabled = NO;
     
     return self;    
 }
 
-- (void)drawRect:(CGRect)rect 
-{
-    if(g_enable_debug_view)
-    {
-	    CGContextRef context = UIGraphicsGetCurrentContext();	 
-	    	       
-	    CGContextSelectFont(context, "Helvetica", 10, kCGEncodingMacRoman); 
-	    
-	    CGContextSetTextDrawingMode (context, kCGTextFillStroke);
-	    CGContextSetRGBFillColor (context, 0, 5, 0, .5);
-	
-	    CGRect viewBounds = self.bounds;
-	
-	    CGContextTranslateCTM(context, 0, viewBounds.size.height);
-	
-	    CGContextScaleCTM(context, 1, -1);
-	    
-	    //CGContextSetRGBStrokeColor (context, 0, 1, 1, 1);
-	    CGContextSetStrokeColorWithColor(context, [UIColor redColor].CGColor);
-	    NSString *msg =   
-	    [NSString stringWithFormat:@"%4d,%4d,d:%d %1.2f %1.2f %1.2f %1.2f",(int)ptCur.x,(int)ptCur.y,currentDirection,rx,ry,ang,mag];
-	    
-		CGContextShowTextAtPoint(context, 10, 10, [msg UTF8String],msg.length );
-	}
-	
-}
+- (void)layoutSubviews {
+    [super layoutSubviews];
 
-- (void)calculateStickPosition:(CGPoint)pt {
-   
-    if(g_pref_input_touch_type==TOUCH_INPUT_ANALOG)
-    {
-        if(STICK2WAY)
-        {
-            stickPos.origin.x =  MIN(ptMax.x-stickWidth,MAX(ptMin.x,pt.x - (stickWidth/2)));
-            stickPos.origin.y =  ptCenter.y - (stickHeight/2);
-        }
-        else if(STICK4WAY)
-        {
-            if(currentDirection == StickRight || currentDirection == StickLeft)
-            {
-                stickPos.origin.x =  MIN(ptMax.x-stickWidth,MAX(ptMin.x,pt.x - (stickWidth/2)));
-                stickPos.origin.y =  ptCenter.y - (stickHeight/2);
-            }
-            else
-            {
-                stickPos.origin.x =  ptCenter.x - (stickWidth/2);
-                stickPos.origin.y =  MIN(ptMax.y-stickHeight,MAX(ptMin.y,pt.y - (stickHeight/2)));
-            }
-        }
-        else
-        {
-            stickPos.origin.x =  MIN(ptMax.x-stickWidth,MAX(ptMin.x,pt.x - (stickWidth/2)));
-            stickPos.origin.y =  MIN(ptMax.y-stickHeight,MAX(ptMin.y,pt.y - (stickHeight/2)));
-        }
-    }
-    else
-    {
-        switch (currentDirection){
-            case StickNone:{stickPos.origin.x =ptCenter.x - (stickWidth/2);stickPos.origin.y=ptCenter.y - (stickHeight/2);break;}
-            case StickUp:{stickPos.origin.x =ptCenter.x - (stickWidth/2);stickPos.origin.y=ptMin.y;break;}
-            case StickDown:{stickPos.origin.x =ptCenter.x - (stickWidth/2);stickPos.origin.y=ptMax.y-stickHeight;break;}
-            case StickLeft:{stickPos.origin.x =ptMin.x;stickPos.origin.y=ptCenter.y - (stickHeight/2);break;}
-            case StickRight:{stickPos.origin.x =ptMax.x-stickWidth;stickPos.origin.y=ptCenter.y - (stickHeight/2);break;}
-            case StickUpLeft:{stickPos.origin.x =ptMin.x;stickPos.origin.y=ptMin.y;break;}
-            case StickUpRight:{stickPos.origin.x =ptMax.x-stickWidth;stickPos.origin.y=ptMin.y;break;}
-            case StickDownLeft:{stickPos.origin.x =ptMin.x;stickPos.origin.y=ptMax.y-stickHeight;break;}
-            case StickDownRight:{stickPos.origin.x =ptMax.x-stickWidth;stickPos.origin.y=ptMax.y-stickHeight;break;}
-        }
-    }
+    CGRect rect = self.bounds;
+    ptMin = CGPointMake(CGRectGetMinX(rect), CGRectGetMinY(rect));
+    ptMax = CGPointMake(CGRectGetMaxX(rect), CGRectGetMaxY(rect));
+    ptCenter = CGPointMake(CGRectGetMidX(rect), CGRectGetMidY(rect));
     
-    stickPos.size.width = stickWidth;
-    stickPos.size.height = stickHeight;
+    int stick_radio = emuController.stick_radio;
+    stickWidth =  rect.size.width * (stick_radio/100.0f);//0.60;
+    stickHeight = rect.size.height * (stick_radio/100.0f);//0.60;
 
+    innerView.frame = CGRectMake(ptCenter.x - stickWidth/2, ptCenter.y - stickHeight/2, stickWidth, stickHeight);
+    outerView.frame = rect;
 }
 
 - (void)calculateStickState:(CGPoint)pt min:(CGPoint)min max:(CGPoint)max center:(CGPoint)center{
@@ -374,7 +299,6 @@
 		ang -= 180.0f;
 	ang = absf(ang);
 	mag = (float) sqrt((rx * rx) + (ry * ry));
-	
 }
 
 - (void)analogTouches:(UITouch *)touch withEvent:(UIEvent *)event
@@ -384,45 +308,70 @@
 
     CGPoint pt = [touch locationInView:self];
     
-    ptCur = pt;
-    
   	if( touch.phase == UITouchPhaseBegan		||
        touch.phase == UITouchPhaseMoved		||
        touch.phase == UITouchPhaseStationary	)
 	{
-	    [self calculateStickState:ptCur min:ptMin max:ptMax center:ptCenter];
+	    [self calculateStickState:pt min:ptMin max:ptMax center:ptCenter];
     }
     else
     {
-        ptCur =ptCenter;
-        currentDirection = StickNone;
         rx=0;
         ry=0;
         mag=0;
         oldRx = oldRy = -999;
     }
     
+    unsigned long pad_status = myosd_pad_status;
+    
     [self updateAnalog];
     
-    if((fabs(oldRx - rx) >= 0.03 || fabs(oldRy - ry) >= 0.03) && g_pref_animated_DPad)
+    if (g_pref_animated_DPad && pad_status != myosd_pad_status && g_pref_input_touch_type != TOUCH_INPUT_ANALOG)
     {
-        oldRx = rx;
-        oldRy = ry;
-        
-        [self calculateStickPosition: (mag >= deadZone ? ptCur : ptCenter)];
-        
-        innerView.center = CGPointMake(CGRectGetMidX(stickPos),CGRectGetMidY(stickPos));
-        if(g_enable_debug_view)[self setNeedsDisplay];
-        [innerView setNeedsDisplay];
-    }  
+#ifdef DEBUG
+        if (myosd_pad_status & (MYOSD_UP|MYOSD_DOWN|MYOSD_LEFT|MYOSD_RIGHT))
+            NSLog(@"****** BUZZ! *******: %s%s%s%s",
+                  (myosd_pad_status & MYOSD_UP) ?   "U" : "-", (myosd_pad_status & MYOSD_DOWN) ?  "D" : "-",
+                  (myosd_pad_status & MYOSD_LEFT) ? "L" : "-", (myosd_pad_status & MYOSD_RIGHT) ? "R" : "-");
+        else
+            NSLog(@"****** BONK! *******");
+#endif
+
+        if (myosd_pad_status & (MYOSD_UP|MYOSD_DOWN|MYOSD_LEFT|MYOSD_RIGHT))
+            [emuController.impactFeedback impactOccurred];
+        else
+            [emuController.selectionFeedback selectionChanged];
+    }
 }
 
-- (void)dealloc {
+// update the position of the stick image from the joy stick state
+-(void)update {
+    CGFloat x,y;
+    
+    if (joy_analog_x[0][0] != 0.0 || joy_analog_y[0][0] != 0.0)
+    {
+        x = joy_analog_x[0][0];
+        y = joy_analog_y[0][0];
+    }
+    else
+    {
+        unsigned long pad_status = myosd_pad_status | myosd_joy_status[0];
+        x = (pad_status & MYOSD_RIGHT) ? +1.0 : (pad_status & MYOSD_LEFT) ? -1.0 : 0.0;
+        y = (pad_status & MYOSD_UP)    ? +1.0 : (pad_status & MYOSD_DOWN) ? -1.0 : 0.0;
+    }
 
-    [outerView release]; 
-    [innerView release];
-	   
-	[super dealloc];
+    // update the stick position, and the dpad/stick image 
+    if (g_pref_input_touch_type != TOUCH_INPUT_DPAD)
+    {
+        //NSLog(@"AnalogStick UPDATE: [%f,%f]", x, y);
+        CGRect stickPos;
+        stickPos.origin.x = ptCenter.x + x * (ptMax.x - ptCenter.x - stickWidth/2) - (stickWidth/2);
+        stickPos.origin.y = ptCenter.y - y * (ptMax.y - ptCenter.y - stickHeight/2) - (stickHeight/2);
+        stickPos.size.width = stickWidth;
+        stickPos.size.height = stickHeight;
+        innerView.frame = stickPos;
+    }
+    innerView.image = [self getStickImage];
 }
 
 @end

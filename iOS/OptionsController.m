@@ -44,6 +44,7 @@
 
 #include "myosd.h"
 
+#import "Options.h"
 #import "OptionsController.h"
 #import "Globals.h"
 #import "ListOptionController.h"
@@ -51,589 +52,48 @@
 #import "FilterOptionController.h"
 #import "InputOptionController.h"
 #import "DefaultOptionController.h"
-#import "DonateController.h"
 #import "HelpController.h"
 #import "EmulatorController.h"
-
-@implementation Options
-
-@synthesize keepAspectRatioPort;
-@synthesize keepAspectRatioLand;
-@synthesize smoothedLand;
-@synthesize smoothedPort;
-
-@synthesize tvFilterLand;
-@synthesize tvFilterPort;
-@synthesize scanlineFilterLand;
-@synthesize scanlineFilterPort;
-
-@synthesize showFPS;
-@synthesize showINFO;
-@synthesize animatedButtons;
-@synthesize fourButtonsLand;
-@synthesize fullLand;
-@synthesize fullPort;
-
-@synthesize lightgunEnabled;
-@synthesize lightgunBottomScreenReload;
-
-@synthesize skinValue;
-
-@synthesize btDeadZoneValue;
-@synthesize touchDeadZone;
-
-@synthesize overscanValue;
-@synthesize tvoutNative;
-
-@synthesize touchtype;
-@synthesize analogDeadZoneValue;
-@synthesize controltype;
-
-@synthesize soundValue;
-
-@synthesize throttle;
-@synthesize fsvalue;
-@synthesize sticktype;
-@synthesize numbuttons;
-@synthesize aplusb;
-@synthesize cheats;
-@synthesize sleep;
-
-@synthesize forcepxa;
-@synthesize emures;
-@synthesize p1aspx;
-
-@synthesize filterClones;
-@synthesize filterFavorites;
-@synthesize filterNotWorking;
-@synthesize manufacturerValue;
-@synthesize yearGTEValue;
-@synthesize yearLTEValue;
-@synthesize driverSourceValue;
-@synthesize categoryValue;
-
-@synthesize filterKeyword;
-
-@synthesize lowlsound;
-@synthesize vsync;
-@synthesize threaded;
-@synthesize dblbuff;
-
-@synthesize mainPriority;
-@synthesize videoPriority;
-
-@synthesize autofire;
-
-@synthesize hiscore;
-
-@synthesize buttonSize;
-@synthesize stickSize;
-
-@synthesize wpantype;
-@synthesize wfpeeraddr;
-@synthesize wfport;
-@synthesize wfframesync;
-@synthesize btlatency;
-
-@synthesize vbean2x;
-@synthesize vantialias;
-@synthesize vflicker;
-
-@synthesize emuspeed;
-
-@synthesize mainThreadType;
-@synthesize videoThreadType;
-
-- (id)init {
-
-    if (self = [super init]) {
-        [self loadOptions];
-    }
-
-    return self;
-}
-
-- (void)loadOptions
-{
-    NSString *path=[NSString stringWithUTF8String:get_documents_path("iOS/options_v23.bin")];
-	
-	NSData *plistData;
-	id plist;
-	NSString *error;
-	
-	NSPropertyListFormat format;
-	
-    NSError *sqerr;
-	plistData = [NSData dataWithContentsOfFile:path options: NSMappedRead error:&sqerr];
-		
-	plist = [NSPropertyListSerialization propertyListFromData:plistData			 
-											 mutabilityOption:NSPropertyListImmutable			 
-													   format:&format
-											 errorDescription:&error];
-	if(!plist)
-	{
-		
-		//NSLog(error);
-		
-		//[error release];
-		
-		optionsArray = [[NSMutableArray alloc] init];
-		
-		keepAspectRatioPort=1;
-		keepAspectRatioLand=1;
-		smoothedPort=g_isIpad?1:0;
-		smoothedLand=g_isIpad?1:0;
-				
-		tvFilterPort = 0;
-        tvFilterLand = 0;
-        scanlineFilterPort = 0;
-        scanlineFilterLand = 0;
-        
-        showFPS = 0;
-        showINFO = 1;
-        fourButtonsLand = 0;
-        animatedButtons = 1;
-		              
-        fullLand = animatedButtons;
-        fullPort = 0;
-        
-        skinValue = 0;
-        
-        btDeadZoneValue = 2;
-        touchDeadZone = 1;
-        
-        overscanValue = 0;
-        tvoutNative = 1;
-        
-        touchtype = 1;
-        analogDeadZoneValue = 2;		
-        
-        controltype = 0;
-        
-        soundValue = 5;
-        
-        throttle = 1;
-        fsvalue = 0;
-        sticktype = 0;
-        numbuttons = 0;
-        aplusb = 0;
-        cheats = 1;
-        sleep = 1;
-        
-        forcepxa = 0;
-        emures = 0;
-        p1aspx = 0;
-        
-        filterClones=0;
-        filterFavorites=0;
-        filterNotWorking=1;
-        manufacturerValue=0;
-        yearGTEValue=0;
-        yearLTEValue=0;
-        driverSourceValue=0;
-        categoryValue=0;
-        
-        filterKeyword = nil;
-        
-        lowlsound = 0;
-        vsync = 0;
-        threaded = 1;
-        dblbuff = 1;
-        
-        mainPriority = 5;
-        videoPriority = 5;
-        
-        autofire = 0;
-        hiscore = 0;
-        
-        stickSize = 2;
-        buttonSize= 2;
-        
-        wpantype = 0;
-        wfpeeraddr = nil;
-        wfport = NETPLAY_PORT;
-        wfframesync = 0;
-        btlatency = 1;
-        
-        vbean2x = 1;
-        vantialias = 1;
-        vflicker = 0;
-        
-        emuspeed = 0;
-        
-        mainThreadType = 0;
-        videoThreadType = 0;
-        
-        lightgunEnabled = 1;
-        lightgunBottomScreenReload = 0;
-        
-        _turboXEnabled = 0;
-        _turboYEnabled = 0;
-        _turboAEnabled = 0;
-        _turboBEnabled = 0;
-        _turboLEnabled = 0;
-        _turboREnabled = 0;
-	}
-	else
-	{
-		
-		optionsArray = [[NSMutableArray alloc] initWithArray:plist];
-		
-		keepAspectRatioPort = [[[optionsArray objectAtIndex:0] objectForKey:@"KeepAspectPort"] intValue];
-		keepAspectRatioLand = [[[optionsArray objectAtIndex:0] objectForKey:@"KeepAspectLand"] intValue];
-		smoothedLand = [[[optionsArray objectAtIndex:0] objectForKey:@"SmoothedLand"] intValue];
-		smoothedPort = [[[optionsArray objectAtIndex:0] objectForKey:@"SmoothedPort"] intValue];	
-		
-	    tvFilterPort = [[[optionsArray objectAtIndex:0] objectForKey:@"TvFilterPort"] intValue];
-        tvFilterLand =  [[[optionsArray objectAtIndex:0] objectForKey:@"TvFilterLand"] intValue];
-        
-        scanlineFilterPort =  [[[optionsArray objectAtIndex:0] objectForKey:@"ScanlineFilterPort"] intValue];
-        scanlineFilterLand =  [[[optionsArray objectAtIndex:0] objectForKey:@"ScanlineFilterLand"] intValue];
-        lightgunEnabled = [[[optionsArray objectAtIndex:0] objectForKey:@"lightgunEnabled"] intValue];
-        lightgunBottomScreenReload = [[[optionsArray objectAtIndex:0] objectForKey:@"lightgunBottomScreenReload"] intValue];
-        showFPS =  [[[optionsArray objectAtIndex:0] objectForKey:@"showFPS"] intValue];
-        showINFO =  [[[optionsArray objectAtIndex:0] objectForKey:@"showINFO"] intValue];
-        fourButtonsLand =  [[[optionsArray objectAtIndex:0] objectForKey:@"fourButtonsLand"] intValue];
-        animatedButtons =  [[[optionsArray objectAtIndex:0] objectForKey:@"animatedButtons"] intValue];	
-        fullLand =  [[[optionsArray objectAtIndex:0] objectForKey:@"fullLand"] intValue];
-        fullPort =  [[[optionsArray objectAtIndex:0] objectForKey:@"fullPort"] intValue];
-        
-        _turboXEnabled = [[[optionsArray objectAtIndex:0] objectForKey:@"turboXEnabled"] intValue];
-        _turboYEnabled = [[[optionsArray objectAtIndex:0] objectForKey:@"turboYEnabled"] intValue];
-        _turboAEnabled = [[[optionsArray objectAtIndex:0] objectForKey:@"turboAEnabled"] intValue];
-        _turboBEnabled = [[[optionsArray objectAtIndex:0] objectForKey:@"turboBEnabled"] intValue];
-        _turboLEnabled = [[[optionsArray objectAtIndex:0] objectForKey:@"turboLEnabled"] intValue];
-        _turboREnabled = [[[optionsArray objectAtIndex:0] objectForKey:@"turboREnabled"] intValue];
-        
-        skinValue =  [[[optionsArray objectAtIndex:0] objectForKey:@"skinValue"] intValue];
-        
-        btDeadZoneValue =  [[[optionsArray objectAtIndex:0] objectForKey:@"btDeadZoneValue"] intValue];
-        touchDeadZone =  [[[optionsArray objectAtIndex:0] objectForKey:@"touchDeadZone"] intValue];
-
-        overscanValue =  [[[optionsArray objectAtIndex:0] objectForKey:@"overscanValue"] intValue];
-        tvoutNative =  [[[optionsArray objectAtIndex:0] objectForKey:@"tvoutNative"] intValue];
-        
-        touchtype =  [[[optionsArray objectAtIndex:0] objectForKey:@"inputTouchType"] intValue];
-        analogDeadZoneValue =  [[[optionsArray objectAtIndex:0] objectForKey:@"analogDeadZoneValue"] intValue];    
-        controltype =  [[[optionsArray objectAtIndex:0] objectForKey:@"controlType"] intValue];
-
-        soundValue =  [[[optionsArray objectAtIndex:0] objectForKey:@"soundValue"] intValue];
-                
-        throttle  =  [[[optionsArray objectAtIndex:0] objectForKey:@"throttle"] intValue];
-        fsvalue  =  [[[optionsArray objectAtIndex:0] objectForKey:@"fsvalue"] intValue];
-        sticktype  =  [[[optionsArray objectAtIndex:0] objectForKey:@"sticktype"] intValue];
-        numbuttons  =  [[[optionsArray objectAtIndex:0] objectForKey:@"numbuttons"] intValue];
-        aplusb  =  [[[optionsArray objectAtIndex:0] objectForKey:@"aplusb"] intValue];
-        cheats  =  [[[optionsArray objectAtIndex:0] objectForKey:@"cheats"] intValue];
-        sleep  =  [[[optionsArray objectAtIndex:0] objectForKey:@"sleep"] intValue];
-        
-        forcepxa  =  [[[optionsArray objectAtIndex:0] objectForKey:@"forcepxa"] intValue];
-        emures  =  [[[optionsArray objectAtIndex:0] objectForKey:@"emures"] intValue];
-        
-        p1aspx  =  [[[optionsArray objectAtIndex:0] objectForKey:@"p1aspx"] intValue];
-                
-        filterClones  =  [[[optionsArray objectAtIndex:0] objectForKey:@"filterClones"] intValue];
-        filterFavorites  =  [[[optionsArray objectAtIndex:0] objectForKey:@"filterFavorites"] intValue];
-        filterNotWorking  =  [[[optionsArray objectAtIndex:0] objectForKey:@"filterNotWorking"] intValue];
-        manufacturerValue  =  [[[optionsArray objectAtIndex:0] objectForKey:@"manufacturerValue"] intValue];
-        yearGTEValue  =  [[[optionsArray objectAtIndex:0] objectForKey:@"yearGTEValue"] intValue];
-        yearLTEValue  =  [[[optionsArray objectAtIndex:0] objectForKey:@"yearLTEValue"] intValue];
-        driverSourceValue  =  [[[optionsArray objectAtIndex:0] objectForKey:@"driverSourceValue"] intValue];
-        categoryValue  =  [[[optionsArray objectAtIndex:0] objectForKey:@"categoryValue"] intValue];
-        
-        filterKeyword  =  [[optionsArray objectAtIndex:0] objectForKey:@"filterKeyword"];
-        
-        lowlsound  =  [[[optionsArray objectAtIndex:0] objectForKey:@"lowlsound"] intValue];
-        vsync  =  [[[optionsArray objectAtIndex:0] objectForKey:@"vsync"] intValue];
-        threaded  =  [[[optionsArray objectAtIndex:0] objectForKey:@"threaded"] intValue];
-        dblbuff  =  [[[optionsArray objectAtIndex:0] objectForKey:@"dblbuff"] intValue];
-        
-        mainPriority  =  [[[optionsArray objectAtIndex:0] objectForKey:@"mainPriority"] intValue];
-        videoPriority  =  [[[optionsArray objectAtIndex:0] objectForKey:@"videoPriority"] intValue];
-        
-        autofire =  [[[optionsArray objectAtIndex:0] objectForKey:@"autofire"] intValue];
-        
-        hiscore  =  [[[optionsArray objectAtIndex:0] objectForKey:@"hiscore"] intValue];
-        
-        buttonSize =  [[[optionsArray objectAtIndex:0] objectForKey:@"buttonSize"] intValue];
-        stickSize =  [[[optionsArray objectAtIndex:0] objectForKey:@"stickSize"] intValue];
-        
-        wpantype  =  [[[optionsArray objectAtIndex:0] objectForKey:@"wpantype"] intValue];
-        wfpeeraddr  =  [[optionsArray objectAtIndex:0] objectForKey:@"wfpeeraddr"];
-        wfport  =  [[[optionsArray objectAtIndex:0] objectForKey:@"wfport"] intValue];
-        wfframesync  =  [[[optionsArray objectAtIndex:0] objectForKey:@"wfframesync"] intValue];
-        btlatency  =  [[[optionsArray objectAtIndex:0] objectForKey:@"btlatency"] intValue];
-        
-        if([wfpeeraddr isEqualToString:@""])
-            wfpeeraddr = nil;
-        if([filterKeyword isEqualToString:@""])
-            filterKeyword = nil;
-        
-        vbean2x  =  [[[optionsArray objectAtIndex:0] objectForKey:@"vbean2x"] intValue];
-        vantialias  =  [[[optionsArray objectAtIndex:0] objectForKey:@"vantialias"] intValue];
-        vflicker  =  [[[optionsArray objectAtIndex:0] objectForKey:@"vflicker"] intValue];
-        
-        emuspeed  =  [[[optionsArray objectAtIndex:0] objectForKey:@"emuspeed"] intValue];
-        
-        mainThreadType  =  [[[optionsArray objectAtIndex:0] objectForKey:@"mainThreadType"] intValue];
-        videoThreadType  =  [[[optionsArray objectAtIndex:0] objectForKey:@"videoThreadType"] intValue];
-	}
-			
-}
-
-- (void)saveOptions
-{
-
-    NSString *wfpeeraddr_tmp = wfpeeraddr == nil ? @"" : wfpeeraddr;
-    NSString *filterKeyword_tmp = filterKeyword == nil ? @"" : filterKeyword;
-    
-	[optionsArray removeAllObjects];
-	[optionsArray addObject:[NSDictionary dictionaryWithObjectsAndKeys:
-							 [NSString stringWithFormat:@"%d", keepAspectRatioPort], @"KeepAspectPort",
-							 [NSString stringWithFormat:@"%d", keepAspectRatioLand], @"KeepAspectLand",
-							 [NSString stringWithFormat:@"%d", smoothedLand], @"SmoothedLand",
-							 [NSString stringWithFormat:@"%d", smoothedPort], @"SmoothedPort",
-							 
-							 [NSString stringWithFormat:@"%d", tvFilterPort], @"TvFilterPort",
-							 [NSString stringWithFormat:@"%d", tvFilterLand], @"TvFilterLand",
-							 
-							 [NSString stringWithFormat:@"%d", scanlineFilterPort], @"ScanlineFilterPort",
-							 [NSString stringWithFormat:@"%d", scanlineFilterLand], @"ScanlineFilterLand",
-                             [NSString stringWithFormat:@"%d", lightgunEnabled],
-                                 @"lightgunEnabled",
-                             [NSString stringWithFormat:@"%d", lightgunBottomScreenReload], @"lightgunBottomScreenReload",
-							 [NSString stringWithFormat:@"%d", showFPS], @"showFPS",							 
-							 [NSString stringWithFormat:@"%d", showINFO], @"showINFO",							 
-							 [NSString stringWithFormat:@"%d", fourButtonsLand], @"fourButtonsLand",							 
-							 [NSString stringWithFormat:@"%d", animatedButtons], @"animatedButtons",
-                             
-                             [NSString stringWithFormat:@"%d", _turboXEnabled], @"turboXEnabled",
-                             [NSString stringWithFormat:@"%d", _turboYEnabled], @"turboYEnabled",
-                             [NSString stringWithFormat:@"%d", _turboAEnabled], @"turboAEnabled",
-                             [NSString stringWithFormat:@"%d", _turboBEnabled], @"turboBEnabled",
-                             [NSString stringWithFormat:@"%d", _turboLEnabled], @"turboLEnabled",
-                             [NSString stringWithFormat:@"%d", _turboREnabled], @"turboREnabled",
-                             
-							 [NSString stringWithFormat:@"%d", fullLand], @"fullLand",
-							 [NSString stringWithFormat:@"%d", fullPort], @"fullPort",
-							 
-							 [NSString stringWithFormat:@"%d", skinValue], @"skinValue",
-							  
-							 [NSString stringWithFormat:@"%d", btDeadZoneValue], @"btDeadZoneValue",
-							 [NSString stringWithFormat:@"%d", touchDeadZone], @"touchDeadZone",
-							 
-							 [NSString stringWithFormat:@"%d", overscanValue], @"overscanValue",
-							 [NSString stringWithFormat:@"%d", tvoutNative], @"tvoutNative",
-							 
-							 [NSString stringWithFormat:@"%d", touchtype], @"inputTouchType",
-							 [NSString stringWithFormat:@"%d", analogDeadZoneValue], @"analogDeadZoneValue",
-							 					
-                             [NSString stringWithFormat:@"%d", controltype], @"controlType",
-
-                             [NSString stringWithFormat:@"%d", soundValue], @"soundValue",
-
-                             [NSString stringWithFormat:@"%d", throttle], @"throttle",
-                             [NSString stringWithFormat:@"%d", fsvalue], @"fsvalue",
-                             [NSString stringWithFormat:@"%d", sticktype], @"sticktype",
-                             [NSString stringWithFormat:@"%d", numbuttons], @"numbuttons",
-                             [NSString stringWithFormat:@"%d", aplusb], @"aplusb",
-                             [NSString stringWithFormat:@"%d", cheats], @"cheats",                             
-                             [NSString stringWithFormat:@"%d", sleep], @"sleep",
-                             
-                             [NSString stringWithFormat:@"%d", forcepxa], @"forcepxa",                             
-                             [NSString stringWithFormat:@"%d", emures], @"emures",
-                             
-                             [NSString stringWithFormat:@"%d", p1aspx], @"p1aspx",
-                             
-                             [NSString stringWithFormat:@"%d", filterClones], @"filterClones",
-                             [NSString stringWithFormat:@"%d", filterFavorites], @"filterFavorites",
-                             [NSString stringWithFormat:@"%d", filterNotWorking], @"filterNotWorking",
-                             [NSString stringWithFormat:@"%d", manufacturerValue], @"manufacturerValue",
-                             [NSString stringWithFormat:@"%d", yearGTEValue], @"yearGTEValue",
-                             [NSString stringWithFormat:@"%d", yearLTEValue], @"yearLTEValue",
-                             [NSString stringWithFormat:@"%d", driverSourceValue], @"driverSourceValue",
-                             [NSString stringWithFormat:@"%d", categoryValue], @"categoryValue",
-                             [NSString stringWithFormat:@"%d", lowlsound], @"lowlsound",
-                             [NSString stringWithFormat:@"%d", vsync], @"vsync",
-                             [NSString stringWithFormat:@"%d", threaded], @"threaded",
-                             [NSString stringWithFormat:@"%d", dblbuff], @"dblbuff",
-                             
-                             [NSString stringWithFormat:@"%d", mainPriority], @"mainPriority",
-                             [NSString stringWithFormat:@"%d", videoPriority], @"videoPriority",
-                             
-                             [NSString stringWithFormat:@"%d", autofire], @"autofire",
-                             [NSString stringWithFormat:@"%d", hiscore], @"hiscore",
-                             
-                             [NSString stringWithFormat:@"%d", stickSize], @"stickSize",
-                             [NSString stringWithFormat:@"%d", buttonSize], @"buttonSize",
-                             
-                             [NSString stringWithFormat:@"%d", wpantype], @"wpantype",
-                             [NSString stringWithFormat:@"%d", wfport], @"wfport",
-                             [NSString stringWithFormat:@"%d", wfframesync], @"wfframesync",
-                             [NSString stringWithFormat:@"%d", btlatency], @"btlatency",
-                             wfpeeraddr_tmp, @"wfpeeraddr",
-                             
-                             filterKeyword_tmp, @"filterKeyword", //CUIADO si es nill termina la lista
-                             
-                             [NSString stringWithFormat:@"%d", vbean2x], @"vbean2x",
-                             [NSString stringWithFormat:@"%d", vantialias], @"vantialias",
-                             [NSString stringWithFormat:@"%d", vflicker], @"vflicker",
-                             
-                             [NSString stringWithFormat:@"%d", emuspeed], @"emuspeed",
-                             
-                             [NSString stringWithFormat:@"%d", mainThreadType], @"mainThreadType",
-                             [NSString stringWithFormat:@"%d", videoThreadType], @"videoThreadType",
-                             
-							 nil]];
-
-
-	NSString *path=[NSString stringWithUTF8String:get_documents_path("iOS/options_v23.bin")];
-    
-	NSData *plistData;
-	
-	NSString *error;
-		
-	plistData = [NSPropertyListSerialization dataFromPropertyList:optionsArray				 
-										     format:NSPropertyListBinaryFormat_v1_0				 
-										     errorDescription:&error];	
-	if(plistData)		
-	{
-	    //NSError*err;
-	
-		BOOL b = [plistData writeToFile:path atomically:NO];
-		//BOOL b = [plistData writeToFile:path options:0  error:&err];
-		if(!b)
-		{
-			    UIAlertView *errAlert = [[UIAlertView alloc] initWithTitle:@"Error saving preferences!" 
-															message://[NSString stringWithFormat:@"Error:%@",[err localizedDescription]]  
-															@"Preferences cannot be saved.\n Check for write permissions. 'chmod -R 777 /var/mobile/Media/ROMs' if needed. Look at the help for details!." 
-															delegate:self 
-													        cancelButtonTitle:@"OK" 
-													        otherButtonTitles: nil];	
-	           [errAlert show];
-	           [errAlert release];
-		}		
-	}
-	else
-	{
-
-		NSLog(@"%@",error);		
-		[error release];		
-	}	
-}
-
-- (void)dealloc {
-    
-    [optionsArray dealloc];
-
-	[super dealloc];
-}
-
-@end
+#import "SystemImage.h"
+#import "ImageCache.h"
 
 @implementation OptionsController
 
-@synthesize emuController;
-
-
-- (id)init {
-    
-    if (self = [super init]) {
-        switchKeepAspectPort=nil;
-        switchKeepAspectLand=nil;
-        switchSmoothedPort=nil;
-        switchSmoothedLand=nil;
-        
-        switchTvFilterPort=nil;
-        switchTvFilterLand=nil;
-        switchScanlineFilterPort=nil;
-        switchScanlineFilterLand=nil;
-        
-        switchShowFPS=nil;
-        switchShowINFO=nil;
-
-        switchfullLand=nil;
-        switchfullPort=nil;
-                                        
-        switchThrottle = nil;
-        
-        switchSleep = nil;
-        
-        switchForcepxa = nil;
-        
-        arrayEmuRes = [[NSArray alloc] initWithObjects:@"Auto",@"320x200",@"320x240",@"400x300",@"480x300",@"512x384",@"640x400",@"640x480",@"800x600",@"1024x768", nil];
-                        
-        arrayFSValue = [[NSArray alloc] initWithObjects:@"Auto",@"None", @"1", @"2", @"3",@"4", @"5", @"6", @"7", @"8", @"9", @"10",nil];
-        
-        arrayOverscanValue = [[NSArray alloc] initWithObjects:@"None",@"1", @"2", @"3",@"4", @"5", @"6", nil];
-        
-        arraySkinValue = 
-        [[NSArray alloc] initWithObjects: @"A", @"B (Layout 1)", @"B (Layout 2)", nil];
-                
-        switchLowlsound = nil;
-
-        
-        arrayEmuSpeed = [[NSArray alloc] initWithObjects: @"Default",
-                         @"50%", @"60%", @"70%", @"80%", @"85%",@"90%",@"95%",@"100%",
-                         @"105%", @"110%", @"115%", @"120%", @"130%",@"140%",@"150%",
-                         nil];
-    }
-
-    return self;
-}
-
-- (void)loadView {
-    
-
-    UIBarButtonItem *backButton = [[UIBarButtonItem alloc] initWithTitle:@"Done"
-                                                                   style:UIBarButtonItemStyleBordered
-                                                                  target: emuController  action:  @selector(done:) ];
-    self.navigationItem.rightBarButtonItem = backButton;
-    [backButton release];
-    
+- (void)viewDidLoad {
+    [super viewDidLoad];
     self.title = NSLocalizedString(@"Settings", @"");
     
-    UITableView *tableView = [[UITableView alloc] 
-    initWithFrame:CGRectMake(0, 0, 240, 200) style:UITableViewStyleGrouped];
-          
-    tableView.delegate = self;
-    tableView.dataSource = self;
-    tableView.autoresizesSubviews = YES;
-    self.view = tableView;
-    [tableView release];
-
+    UILabel* pad = [[UILabel alloc] init];
+    pad.text = @" ";
+    
+    UIImageView* logo = [[UIImageView alloc] initWithImage:[[UIImage imageNamed:@"mame_logo"] scaledToSize:CGSizeMake(300, 0)]];
+    logo.contentMode = UIViewContentModeScaleAspectFit;
+    
+    UILabel* info = [[UILabel alloc] init];
+    info.text = [self.applicationVersionInfo stringByAppendingString:@"\n"];
+    info.textAlignment = NSTextAlignmentCenter;
+    info.numberOfLines = 0;
+    
+    UIStackView* stack = [[UIStackView alloc] initWithArrangedSubviews:@[pad, logo, info]];
+    stack.axis = UILayoutConstraintAxisVertical;
+    stack.alignment = UIStackViewAlignmentFill;
+    stack.distribution = UIStackViewDistributionEqualSpacing;
+    
+    [stack setNeedsLayout]; [stack layoutIfNeeded];
+    CGFloat height = [stack systemLayoutSizeFittingSize:UILayoutFittingCompressedSize].height;
+    stack.frame =  CGRectMake(0, 0, self.view.bounds.size.width, height);
+     
+    self.tableView.tableHeaderView = stack;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
    
-   NSString *cellIdentifier = [NSString stringWithFormat: @"%d:%d", [indexPath indexAtPosition:0], [indexPath indexAtPosition:1]];
-   UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
-   
-   if (cell == nil)
-   {
-       
-      UITableViewCellStyle style;
-       
-      if((indexPath.section==kFilterSection && indexPath.row==9)
-          || (indexPath.section==kMultiplayerSection && indexPath.row==0)
-          || (indexPath.section==kMultiplayerSection && indexPath.row==1)
-          || (indexPath.section==kMultiplayerSection && indexPath.row==2)
-         )
-          style = UITableViewCellStyleDefault;
-       else
-          style = UITableViewCellStyleValue1;
-       
-      cell = [[[UITableViewCell alloc] initWithStyle:style
-                                      //UITableViewCellStyleDefault
-                                      //UITableViewCellStyleValue1
-                                      reuseIdentifier:@"CellIdentifier"] autorelease];
-       
-      cell.accessoryType = UITableViewCellAccessoryNone;
-      cell.selectionStyle = UITableViewCellSelectionStyleNone;
-   }
+   UITableViewCell *cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleValue1 reuseIdentifier:nil];
+   cell.accessoryType = UITableViewCellAccessoryNone;
+   cell.selectionStyle = UITableViewCellSelectionStyleNone;
    
    Options *op = [[Options alloc] init];
-   
+    
    switch (indexPath.section)
    {
            
@@ -644,271 +104,182 @@
                case 0:
                {
                    cell.textLabel.text   = @"Help";
+                   cell.imageView.image = [UIImage systemImageNamed:@"questionmark.circle"];
                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
                    break;
                }
-                   
                case 1:
                {
-                   cell.textLabel.text   = @"Donate";
+                   cell.textLabel.text   = @"What's New";
+                   cell.imageView.image = [UIImage systemImageNamed:@"info.circle"];
                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
                    break;
                }
            }
            break;
        }
-           
-       case kPortraitSection: //Portrait
-       {
-           switch (indexPath.row) 
-           {
-               case 0: 
-               {
-                   cell.textLabel.text   = @"Smoothed Image";
-                   [switchSmoothedPort release];
-                   switchSmoothedPort = [[UISwitch alloc] initWithFrame:CGRectZero];                
-                   cell.accessoryView = switchSmoothedPort;
-                   [switchSmoothedPort setOn:[op smoothedPort] animated:NO];
-                   [switchSmoothedPort addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];                   
-                   break;
-               }
-               
-               case 1:
-               {
-                   cell.textLabel.text   = @"CRT Effect";
-                   [switchTvFilterPort release];
-                   switchTvFilterPort  = [[UISwitch alloc] initWithFrame:CGRectZero];                               
-                   cell.accessoryView = switchTvFilterPort ;
-                   [switchTvFilterPort setOn:[op tvFilterPort] animated:NO];
-                   [switchTvFilterPort addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
-                   break;
-               }
-               case 2:
-               {
-                   cell.textLabel.text   = @"Scanline Effect";
-                   [switchScanlineFilterPort release];
-                   switchScanlineFilterPort  = [[UISwitch alloc] initWithFrame:CGRectZero];                
-                   cell.accessoryView = switchScanlineFilterPort ;
-                   [switchScanlineFilterPort setOn:[op scanlineFilterPort] animated:NO];
-                   [switchScanlineFilterPort addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];   
-                   break;
-               }          
-               case 3:
-               {
-                   cell.textLabel.text   = @"Full Screen";
-                   [switchfullPort release];
-                   switchfullPort  = [[UISwitch alloc] initWithFrame:CGRectZero];                
-                   cell.accessoryView = switchfullPort;
-                   [switchfullPort setOn:[op fullPort] animated:NO];
-                   [switchfullPort addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged]; 
-                   break;
-               }   
-               case 4:
-               {
-	                cell.textLabel.text   = @"Keep Aspect Ratio";
-                   [switchKeepAspectPort release];
-	                switchKeepAspectPort  = [[UISwitch alloc] initWithFrame:CGRectZero];                
-	                cell.accessoryView = switchKeepAspectPort;
-	                [switchKeepAspectPort setOn:[op keepAspectRatioPort] animated:NO];
-	                [switchKeepAspectPort addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];   
-                   break;
-               }             
-                           
-           }    
-           break;
-       }
-       case kLandscapeSection:  //Landscape
-       {
-           switch (indexPath.row) 
-           {
-               case 0: 
-               {
-                   cell.textLabel.text  = @"Smoothed Image";
-                   [switchSmoothedLand release];
-                   switchSmoothedLand = [[UISwitch alloc] initWithFrame:CGRectZero];                
-                   cell.accessoryView = switchSmoothedLand;
-                   [switchSmoothedLand setOn:[op smoothedLand] animated:NO];
-                   [switchSmoothedLand addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];  
-                   break;
-               }
-               case 1:
-               {
-                   cell.textLabel.text   = @"CRT Effect";
-                   [switchTvFilterLand release];
-                   switchTvFilterLand  = [[UISwitch alloc] initWithFrame:CGRectZero];                
-                   cell.accessoryView = switchTvFilterLand ;
-                   [switchTvFilterLand setOn:[op tvFilterLand] animated:NO];
-                   [switchTvFilterLand addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];  
-                   break;
-               }
-               case 2:
-               {
-                   cell.textLabel.text   = @"Scanline Effect";
-                   [switchScanlineFilterLand release];
-                   switchScanlineFilterLand  = [[UISwitch alloc] initWithFrame:CGRectZero];                
-                   cell.accessoryView = switchScanlineFilterLand ;
-                   [switchScanlineFilterLand setOn:[op scanlineFilterLand] animated:NO];
-                   [switchScanlineFilterLand addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];   
-                   break;
-               }
-               case 3:
-               {
-                   cell.textLabel.text   = @"Full Screen";
-                   [switchfullLand release];
-                   switchfullLand  = [[UISwitch alloc] initWithFrame:CGRectZero];                
-                   cell.accessoryView = switchfullLand ;
-                   [switchfullLand setOn:[op fullLand] animated:NO];
-                   [switchfullLand addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];   
-                   break;
-               }
-
-               case 4:
-               {
-
-                    cell.textLabel.text   = @"Keep Aspect Ratio";
-                   [switchKeepAspectLand release];
-                    switchKeepAspectLand  = [[UISwitch alloc] initWithFrame:CGRectZero];                
-                    cell.accessoryView = switchKeepAspectLand;
-                    [switchKeepAspectLand setOn:[op keepAspectRatioLand] animated:NO];
-                    [switchKeepAspectLand addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
-   
-                   break;
-               }
-           }
-           break;
-        }    
-        case kInputSection:  //Input
+        case kVideoSection:
         {
             switch (indexPath.row)
             {
                 case 0:
                 {
-                    cell.textLabel.text = @"Game Input";
+                    cell.textLabel.text = @"Filter";
                     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                    cell.detailTextLabel.text = [Options.arrayFilter optionName:op.filter];
                     break;
                 }
-            }
-            break;
-        }
-       case kDefaultsSection:
-       {
-           switch (indexPath.row)
-           {
-               case 0:
-               {
-                   cell.textLabel.text = @"Defaults";
-                   cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-                   break;
-               }
-           }
-           break;
-       }
-        case kMiscSection:  //Miscellaneous
-        {
-            switch (indexPath.row) 
-            {
-              case 0:
-               {
-                   cell.textLabel.text   = @"Show FPS";
-                   [switchShowFPS release];
-                   switchShowFPS  = [[UISwitch alloc] initWithFrame:CGRectZero];                
-                   cell.accessoryView = switchShowFPS ;
-                   [switchShowFPS setOn:[op showFPS] animated:NO];
-                   [switchShowFPS addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];   
-                   break;
-               }
-               case 1:
-               {                                                         
-                   cell.textLabel.text   = @"Emulated Resolution";
-                   cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-                   cell.detailTextLabel.text = [arrayEmuRes objectAtIndex:op.emures];
-
-                   break;
-               }
-               case 2:
-               {
-                    cell.textLabel.text   = @"Emulated Speed";
-                    
+                case 1:
+                {
+                    cell.textLabel.text   = @"Skin";
                     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-                    cell.detailTextLabel.text = [arrayEmuSpeed objectAtIndex:op.emuspeed];
-                    
+                    cell.detailTextLabel.text = [Options.arraySkin optionName:op.skin];
                     break;
-               }
-               case 3:
-               {
-                   cell.textLabel.text   = @"Throttle";
-                   [switchThrottle release];
-                   switchThrottle  = [[UISwitch alloc] initWithFrame:CGRectZero];                
-                   cell.accessoryView = switchThrottle ;
-                   [switchThrottle setOn:[op throttle] animated:NO];
-                   [switchThrottle addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];   
-                   break;
-               }
+                }
+                case 2:
+                {
+                    cell.textLabel.text   = @"Screen Shader";
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                    cell.detailTextLabel.text = [Options.arrayScreenShader optionName:op.screenShader];
+                    break;
+                }
+                case 3:
+                {
+                    cell.textLabel.text   = @"Vector Shader";
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                    cell.detailTextLabel.text = [Options.arrayLineShader optionName:op.lineShader];
+                    break;
+                }
                case 4:
                {
-                   cell.textLabel.text   = @"Frame Skip";
+                   cell.textLabel.text   = @"Colorspace";
                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-                   cell.detailTextLabel.text = [arrayFSValue objectAtIndex:op.fsvalue];
-    
+                   cell.detailTextLabel.text = [Options.arrayColorSpace optionName:op.colorSpace];
                    break;
                }
                case 5:
                {
-                   cell.textLabel.text   = @"Force Pixel Aspect";
-                   [switchForcepxa release];
-                   switchForcepxa  = [[UISwitch alloc] initWithFrame:CGRectZero];                
-                   cell.accessoryView = switchForcepxa ;
-                   [switchForcepxa setOn:[op forcepxa] animated:NO];
-                   [switchForcepxa addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];   
+                   cell.textLabel.text   = @"Emulated Resolution";
+                   cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                   cell.detailTextLabel.text = [Options.arrayEmuRes optionAtIndex:op.emures];
                    break;
-               }  
-              case 6:
+               }
+               case 6:
                {
-                   cell.textLabel.text   = @"Sleep on Idle";
-                   [switchSleep release];
-                   switchSleep  = [[UISwitch alloc] initWithFrame:CGRectZero];                
-                   cell.accessoryView = switchSleep ;
-                   [switchSleep setOn:[op sleep] animated:NO];
-                   [switchSleep addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];   
+                   cell.textLabel.text   = @"Use Metal";
+                   cell.accessoryView = [self optionSwitchForKey:@"useMetal"];
+                   [(UIControl*)cell.accessoryView setEnabled:g_isMetalSupported];
                    break;
-               }                                                                             
-              case 7:
+               }
+               case 7:
                {
-                   cell.textLabel.text   = @"Show Info/Warnings";
-                   [switchShowINFO release];
-                   switchShowINFO  = [[UISwitch alloc] initWithFrame:CGRectZero];                
-                   cell.accessoryView = switchShowINFO ;
-                   [switchShowINFO setOn:[op showINFO] animated:NO];
-                   [switchShowINFO addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];   
+                    cell.textLabel.text   = @"Keep Aspect Ratio";
+                    cell.accessoryView = [self optionSwitchForKey:@"keepAspectRatio"];
                    break;
                }
                case 8:
                {
-                    cell.textLabel.text   = @"Low Latency Audio";
-                    [switchLowlsound release];
-                    switchLowlsound  = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchLowlsound ;
-                    [switchLowlsound setOn:[op lowlsound] animated:NO];
-                    [switchLowlsound addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
-                    break;
+                   cell.textLabel.text   = @"Integer Scaling Only";
+                   cell.accessoryView = [self optionSwitchForKey:@"integerScalingOnly"];
+                   break;
                }
                case 9:
                {
-                   cell.textLabel.text   = @"Skin";
-                   
-                   cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-                   cell.detailTextLabel.text = [arraySkinValue objectAtIndex:op.skinValue];
-
+                   cell.textLabel.text   = @"Force Pixel Aspect";
+                   cell.accessoryView = [self optionSwitchForKey:@"forcepxa"];
                    break;
                }
-               case 10:
+            }
+            break;
+        }
+           
+       case kFullscreenSection:
+        {
+           switch (indexPath.row)
+           {
+               case 0:
                {
-                   cell.textLabel.text   = @"Overscan TV-OUT";
-                   
-                   cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-                   cell.detailTextLabel.text = [arrayOverscanValue objectAtIndex:op.overscanValue];
-                   
+                   cell.textLabel.text   = @"Fullscreen (Portrait)";
+                   cell.accessoryView = [self optionSwitchForKey:@"fullscreenPortrait"];
                    break;
+               }
+               case 1:
+               {
+                   cell.textLabel.text   = @"Fullscreen (Landscape)";
+                   cell.accessoryView = [self optionSwitchForKey:@"fullscreenLandscape"];
+                   break;
+               }
+               case 2:
+               {
+                   cell.textLabel.text   = @"Fullscreen (Controller)";
+                   cell.accessoryView = [self optionSwitchForKey:@"fullscreenJoystick"];
+                   break;
+               }
+           }
+           break;
+        }
+           
+        case kMiscSection:  //Miscellaneous
+        {
+            switch (indexPath.row) 
+            {
+               case 0:
+               {
+                   cell.textLabel.text   = @"Show FPS";
+                   cell.accessoryView = [self optionSwitchForKey:@"showFPS"];
+                   break;
+               }
+               case 1:
+               {
+                   cell.textLabel.text   = @"Show HUD";
+                   cell.accessoryView = [self optionSwitchForKey:@"showHUD"];
+                   break;
+               }
+               case 2:
+               {
+                   cell.textLabel.text   = @"Show Info/Warnings";
+                   cell.accessoryView = [self optionSwitchForKey:@"showINFO"];
+                   break;
+               }
+                case 3:
+                {
+                    cell.textLabel.text   = @"Throttle";
+                    cell.accessoryView = [self optionSwitchForKey:@"throttle"];
+                    break;
+                }
+                case 4:
+                {
+                    cell.textLabel.text   = @"Frame Skip";
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                    cell.detailTextLabel.text = [Options.arrayFSValue optionAtIndex:op.fsvalue];
+                    break;
+                }
+                case 5:
+                {
+                    cell.textLabel.text   = @"Overscan TV-OUT";
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                    cell.detailTextLabel.text = [Options.arrayOverscanValue optionAtIndex:op.overscanValue];
+                    break;
+                }
+
+               case 6:
+               {
+                    cell.textLabel.text   = @"Emulated Speed";
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                    cell.detailTextLabel.text = [Options.arrayEmuSpeed optionAtIndex:op.emuspeed];
+                    break;
+               }
+               case 7:
+               {
+                   cell.textLabel.text   = @"Sleep on Idle";
+                   cell.accessoryView = [self optionSwitchForKey:@"sleep"];
+                   break;
+               }                                                                             
+               case 8:
+               {
+                    cell.textLabel.text   = @"Low Latency Audio";
+                    cell.accessoryView = [self optionSwitchForKey:@"lowlsound"];
+                    break;
                }
             }
             break;   
@@ -919,29 +290,104 @@
            {
                case 0:
                {
-                   cell.textLabel.text = @"Game Filter";
-                   cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                   cell.textLabel.text   = @"Hide Clones";
+                   cell.accessoryView = [self optionSwitchForKey:@"filterClones"];
+                   break;
+               }
+               case 1:
+               {
+                   cell.textLabel.text   = @"Hide Not Working";
+                   cell.accessoryView = [self optionSwitchForKey:@"filterNotWorking"];
                    break;
                }
            }
            break;
-       }
-       case kMultiplayerSection:
-       {
+        }
+        case kOtherSection:
+        {
+            switch (indexPath.row)
+            {
+                case 0:
+                {
+                    cell.textLabel.text = @"Game Input";
+                    cell.imageView.image = [UIImage systemImageNamed:@"gamecontroller"];
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                    break;
+                }
+                case 1:
+                {
+                    cell.textLabel.text = @"Defaults";
+                    cell.imageView.image = [UIImage systemImageNamed:@"slider.horizontal.3"];
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                    break;
+                }
+                case 2:
+                {
+                    cell.textLabel.text = @"Peer-to-peer Netplay";
+                    cell.imageView.image = [UIImage systemImageNamed:@"antenna.radiowaves.left.and.right"];
+                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                    break;
+                }
+            }
+            break;
+        }
+        case kImportSection:
+        {
            switch (indexPath.row)
            {
                case 0:
                {
-                   cell.textLabel.text = @"Peer-to-peer Netplay";
+                   cell.textLabel.text = @"Import";
+                   cell.imageView.image = [UIImage systemImageNamed:@"square.and.arrow.down.on.square"];
+                   cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                   break;
+               }
+               case 1:
+               {
+                   cell.textLabel.text = @"Export";
+                   cell.imageView.image = [UIImage systemImageNamed:@"square.and.arrow.up.on.square"];
+                   cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                   break;
+               }
+               case 2:
+               {
+                   // TODO: do we want this here? or burried in `Game Input`?
+                   cell.textLabel.text = @"Export Skin";
+                   cell.imageView.image = [UIImage systemImageNamed:@"square.and.arrow.up"];
+                   cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+                   break;
+               }
+               case 3:
+               {
+                   cell.textLabel.text = @"Start Server";
+                   cell.imageView.image = [UIImage systemImageNamed:@"arrow.up.arrow.down.circle"];
                    cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
                    break;
                }
            }
            break;
-       }
-   }
+        }
+        case kResetSection:
+        {
+            switch (indexPath.row)
+            {
+                case 0:
+                {
+                    cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:nil];
 
-   [op release];
+                    cell.textLabel.text = @"Reset to Defaults";
+                    cell.textLabel.textColor = [UIColor whiteColor];
+                    cell.textLabel.shadowColor = [UIColor blackColor];
+                    cell.textLabel.textAlignment = NSTextAlignmentCenter;
+                    cell.textLabel.font = [UIFont boldSystemFontOfSize:24.0];
+                    cell.backgroundColor = [UIColor systemRedColor];
+                    break;
+                }
+            }
+            break;
+         }
+
+   }
 
    return cell;
 }
@@ -955,14 +401,14 @@
 		
     switch (section)
     {
-          case kSupportSection: return @"Support";
-          case kPortraitSection: return @"Portrait";
-          case kLandscapeSection: return @"Landscape";
-          case kInputSection: return @"";//@"Game Input";
-          case kDefaultsSection: return @"";
-          case kMiscSection: return @"";
-          case kFilterSection: return @"";//@"Game Filter";
-          case kMultiplayerSection: return @"";//@"Peer-to-peer Netplay";
+        case kSupportSection: return @"";
+        case kFullscreenSection: return @"Fullscreen";
+        case kVideoSection: return @"Video Options";
+        case kMiscSection: return @"Options";
+        case kFilterSection: return @"Game Filter";
+        case kOtherSection: return @""; // @"Other";
+        case kImportSection: return @"Import and Export";
+        case kResetSection: return @"";
     }
     return @"Error!";
 }
@@ -973,128 +419,23 @@
       switch (section)
       {
           case kSupportSection: return 2;
-          case kPortraitSection: return 5;
-          case kLandscapeSection: return 5;
-          case kInputSection: return 1;
-          case kDefaultsSection: return 1;
-          case kMiscSection: return 11;
-          case kFilterSection: return 1;
-          case kMultiplayerSection: return 1;
+          case kFullscreenSection: return 3;
+          // only show the netplay option if we are being prestenting from main game, not from choose game ui
+          case kOtherSection: return (self.presentingViewController == self.emuController) ? 3 : 2;
+          case kVideoSection: return 10;
+          case kMiscSection: return 9;
+          case kFilterSection: return 2;
+          case kImportSection: return 4;
+          case kResetSection: return 1;
       }
     return -1;
-}
-
--(void)viewDidLoad{	
-
-}
-
-
--(BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
-     //return (interfaceOrientation == UIInterfaceOrientationPortrait);
-     return YES;
-}
-
-- (void)didReceiveMemoryWarning {
-	[super didReceiveMemoryWarning];
-}
-
-
-- (void)dealloc {
-    
-    [switchKeepAspectPort release];
-    [switchKeepAspectLand release];
-    [switchSmoothedPort release];
-    [switchSmoothedLand release];
-    [switchTvFilterPort release];
-    [switchTvFilterLand release];
-    [switchScanlineFilterPort release];
-    [switchScanlineFilterLand release];
-    
-    [switchShowFPS release];
-    [switchShowINFO release];
-    
-    [switchfullLand release];
-    [switchfullPort release];
-            
-    [switchThrottle release];
-    [switchSleep release];
-    [switchForcepxa release];
-    
-    [arrayEmuRes release];
-
-    [arrayFSValue release];
-    [arrayOverscanValue release];
-    [arraySkinValue release];
-        
-    [switchLowlsound release];
-    
-    [arrayEmuSpeed release];
-    
-    [super dealloc];
-}
-
-- (void)optionChanged:(id)sender
-{
-    Options *op = [[Options alloc] init];
-	
-	if(sender==switchKeepAspectPort)
-	   op.keepAspectRatioPort = [switchKeepAspectPort isOn];
-	
-	if(sender==switchKeepAspectLand)    		
-	   op.keepAspectRatioLand = [switchKeepAspectLand isOn];
-	   	   
-	if(sender==switchSmoothedPort)   
-	   op.smoothedPort =  [switchSmoothedPort isOn];
-	
-	if(sender==switchSmoothedLand)
-	   op.smoothedLand =  [switchSmoothedLand isOn];
-		   
-	if(sender == switchTvFilterPort)  
-	   op.tvFilterPort =  [switchTvFilterPort isOn];
-	   
-	if(sender == switchTvFilterLand)   
-	   op.tvFilterLand =  [switchTvFilterLand isOn];
-	   
-	if(sender == switchScanlineFilterPort)   
-	   op.scanlineFilterPort =  [switchScanlineFilterPort isOn];
-	   
-	if(sender == switchScanlineFilterLand)
-	   op.scanlineFilterLand =  [switchScanlineFilterLand isOn];    
-
-    if(sender == switchShowFPS)
-	   op.showFPS =  [switchShowFPS isOn];
-
-    if(sender == switchShowINFO)
-	   op.showINFO =  [switchShowINFO isOn];
-				
-	if(sender == switchfullLand) 
-	   op.fullLand =  [switchfullLand isOn];
-
-	if(sender == switchfullPort) 
-	   op.fullPort =  [switchfullPort isOn];
-  	   	     	   	         
-    if(sender == switchThrottle)
-        op.throttle = [switchThrottle isOn];    
-       
-    if(sender == switchSleep)
-        op.sleep = [switchSleep isOn];
-
-    if(sender == switchForcepxa)
-        op.forcepxa = [switchForcepxa isOn];
-            
-    if(sender == switchLowlsound)
-        op.lowlsound = [switchLowlsound isOn];
-    
-	[op saveOptions];
-		
-	[op release];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     
     NSUInteger row = [indexPath row];
     NSUInteger section = [indexPath section];
-    //printf("%d %d\n",section,row);
+    UITableViewCell* cell = [tableView cellForRowAtIndexPath:indexPath];
     
     switch (section)
     {
@@ -1103,109 +444,102 @@
             if (row==0){
                 HelpController *controller = [[HelpController alloc] init];
                 [[self navigationController] pushViewController:controller animated:YES];
-                [controller release];
             }
-            
             if (row==1){
-                DonateController *controller = [[DonateController alloc] init];
+                HelpController *controller = [[HelpController alloc] initWithName:@"WHATSNEW.html" title:@"What's New"];
                 [[self navigationController] pushViewController:controller animated:YES];
-                [controller release];
             }
-
             break;
         }
-        case kInputSection:
+        case kOtherSection:
         {
             if (row==0){
-                InputOptionController *inputOptController = [[InputOptionController alloc] init];
-                inputOptController.emuController = self.emuController;
-                
+                InputOptionController *inputOptController = [[InputOptionController alloc] initWithEmuController:self.emuController];
                 [[self navigationController] pushViewController:inputOptController animated:YES];
-                [inputOptController release];
+                [tableView reloadData];
+            }
+            if (row==1){
+                DefaultOptionController *defaultOptController = [[DefaultOptionController alloc] initWithEmuController:self.emuController];
+                [[self navigationController] pushViewController:defaultOptController animated:YES];
+                [tableView reloadData];
+            }
+            if(row==2)
+            {
+                NetplayController *netplayOptController = [[NetplayController alloc]  initWithEmuController:self.emuController];
+                [[self navigationController] pushViewController:netplayOptController animated:YES];
                 [tableView reloadData];
             }
             break;
         }
-        case kDefaultsSection:
+        case kVideoSection:
         {
             if (row==0){
-                DefaultOptionController *defaultOptController = [[DefaultOptionController alloc] init];
-                defaultOptController.emuController = self.emuController;
-                
-                [[self navigationController] pushViewController:defaultOptController animated:YES];
-                [defaultOptController release];
-                [tableView reloadData];
+                ListOptionController *listController = [[ListOptionController alloc] initWithKey:@"filter" list:Options.arrayFilter title:cell.textLabel.text];
+                [[self navigationController] pushViewController:listController animated:YES];
+            }
+            if (row==1){
+                // TODO: do we want to filter out the Skins that have names that match ROMNAME, PARENT, or MACHINE? and only show "User Skins"?
+                ListOptionController *listController = [[ListOptionController alloc] initWithKey:@"skin" list:Options.arraySkin title:cell.textLabel.text];
+                [[self navigationController] pushViewController:listController animated:YES];
+            }
+            if (row==2){
+                ListOptionController *listController = [[ListOptionController alloc] initWithKey:@"screenShader" list:Options.arrayScreenShader title:cell.textLabel.text];
+                [[self navigationController] pushViewController:listController animated:YES];
+            }
+            if (row==3){
+                ListOptionController *listController = [[ListOptionController alloc] initWithKey:@"lineShader" list:Options.arrayLineShader title:cell.textLabel.text];
+                [[self navigationController] pushViewController:listController animated:YES];
+            }
+            if (row==4){
+                ListOptionController *listController = [[ListOptionController alloc] initWithKey:@"colorSpace" list:Options.arrayColorSpace title:cell.textLabel.text];
+                [[self navigationController] pushViewController:listController animated:YES];
+            }
+            if (row==5){
+                ListOptionController *listController = [[ListOptionController alloc] initWithKey:@"emures" list:Options.arrayEmuRes title:cell.textLabel.text];
+                [[self navigationController] pushViewController:listController animated:YES];
             }
             break;
         }
         case kMiscSection:
         {
-            if (row==1){
-                ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
-                               type:kTypeEmuRes list:arrayEmuRes];                         
-                [[self navigationController] pushViewController:listController animated:YES];
-                [listController release];
-            }
-            if (row==2){
-                ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
-                                                                                              type:kTypeEmuSpeed list:arrayEmuSpeed];
-                [[self navigationController] pushViewController:listController animated:YES];
-                [listController release];
-            }
             if (row==4){
-                ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
-                                type:kTypeFSValue list:arrayFSValue];                         
+                ListOptionController *listController = [[ListOptionController alloc] initWithKey:@"fsvalue" list:Options.arrayFSValue title:cell.textLabel.text];
                 [[self navigationController] pushViewController:listController animated:YES];
-                [listController release];
             }
-            if (row==9){
-                ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
-                                                        type:kTypeSkinValue list:arraySkinValue];  
+            if (row==5){
+                ListOptionController *listController = [[ListOptionController alloc] initWithKey:@"overscanValue" list:Options.arrayOverscanValue title:cell.textLabel.text];
                 [[self navigationController] pushViewController:listController animated:YES];
-                [listController release];
             }
-            if (row==10){
-                ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStyleGrouped
-                                                        type:kTypeOverscanValue list:arrayOverscanValue];
+            if (row==6) {
+                ListOptionController *listController = [[ListOptionController alloc] initWithKey:@"emuspeed" list:Options.arrayEmuSpeed title:cell.textLabel.text];
                 [[self navigationController] pushViewController:listController animated:YES];
-                [listController release];
-            }
-
-            break;
-        }
-        case kMultiplayerSection:
-        {
-            if(row==0)
-            {
-                NetplayController *netplayOptController = [[NetplayController alloc] init];
-                netplayOptController.emuController = self.emuController;
-                
-                [[self navigationController] pushViewController:netplayOptController animated:YES];
-                [netplayOptController release];
-                [tableView reloadData];
             }
             break;
         }
-        case kFilterSection:
+        case kImportSection:
         {
-            if(row==0)
-            {
-                FilterOptionController *filterOptController = [[FilterOptionController alloc] init];
-                filterOptController.emuController = self.emuController;
-                
-                [[self navigationController] pushViewController:filterOptController animated:YES];
-                [filterOptController release];
-                [tableView reloadData];
+            if (row==0) {
+                [self.emuController runImport];
+            }
+            if (row==1) {
+                [self.emuController runExport];
+            }
+            if (row==2) {
+                [self.emuController runExportSkin];
+            }
+            if (row==3) {
+                [self.emuController runServer];
+            }
+            break;
+        }
+        case kResetSection:
+        {
+            if (row==0) {
+                [self.emuController runReset];
             }
             break;
         }
     }
-}
-
-- (void) viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-    UITableView *tableView = (UITableView *)self.view;
-    [tableView reloadData];
 }
 
 @end

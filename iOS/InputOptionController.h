@@ -43,10 +43,11 @@
  */
 
 #import <UIKit/UIKit.h>
+#import "OptionsTableViewController.h"
 
 @class EmulatorController;
 
-@interface InputOptionController : UITableViewController{
+@interface InputOptionController : OptionsTableViewController {
     UISwitch *switchAnimatedButtons;
     
     NSArray *arrayTouchType;
@@ -55,16 +56,13 @@
     
     NSArray *arrayNumbuttons;
     UISwitch *switchAplusB;
+    UISwitch *switchBAYX;
     NSArray  *arrayAutofireValue;
     NSArray  *arrayButtonSizeValue;
     
-    NSArray *arrayControlType;
-    
     UISwitch *switchP1aspx;
     
-    UISwitch *switchTouchDeadZone;
     NSArray *arrayAnalogDZValue;
-    NSArray *arrayBTDZValue;
     
     UISwitch *switchLightgunEnabled;
     UISwitch *switchLightgunBottomScreenReload;
@@ -75,8 +73,15 @@
     UISwitch *switchTurboBButtonEnabled;
     UISwitch *switchTurboLButtonEnabled;
     UISwitch *switchTurboRButtonEnabled;
+    
+    UISwitch *switchTouchAnalogEnabled;
+    UISwitch *switchTouchAnalogHideTouchButtons;
+    UISwitch *switchTouchAnalogHideTouchDirectionalPad;
+    UISlider *sliderTouchAnalogSensitivity;
+    
+    UISwitch *switchTouchDirectionalEnabled;
+    
+    UISlider *sliderTouchControlsOpacity;
 }
-
-@property (nonatomic, assign) EmulatorController *emuController;
 
 @end

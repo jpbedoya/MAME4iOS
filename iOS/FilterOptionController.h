@@ -43,21 +43,17 @@
  */
 
 #import <UIKit/UIKit.h>
+#include "OptionsTableViewController.h"
 
 @class EmulatorController;
 
-@interface FilterOptionController:  UITableViewController <UITextFieldDelegate> {
+@interface FilterOptionController: OptionsTableViewController <UITextFieldDelegate> {
     
-    UISwitch *switchFilterClones;
-    UISwitch *switchFilterFavorites;
-    UISwitch *switchFilterNotWorking;
     NSMutableArray  *arrayManufacturerValue;
     NSMutableArray  *arrayYearGTEValue;
     NSMutableArray  *arrayYearLTEValue;
     NSMutableArray  *arrayDriverSourceValue;
     NSMutableArray  *arrayCategoryValue;
 }
-
-@property (nonatomic, assign) EmulatorController *emuController;
 
 @end

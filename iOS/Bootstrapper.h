@@ -43,30 +43,12 @@
  */
 
 #import "EmulatorController.h"
-
 #import <UIKit/UIScreen.h>
 
-#ifdef IOS3
-UIKIT_EXTERN_CLASS @interface UIScreenMode : NSObject {
-  @private
-    id _mode;
-}
-
-@property(readonly,nonatomic) CGSize  size;             // The width and height in pixels
-@property(readonly,nonatomic) CGFloat pixelAspectRatio; // The aspect ratio of a single pixel. The ratio is defined as X/Y.
-
-@end
-#endif
-
-@interface Bootstrapper : UIApplication  {
-	
+@interface Bootstrapper : UIResponder <UIApplicationDelegate>  {
 	UIWindow		    *deviceWindow;
 	UIWindow            *externalWindow;
-	NSArray             *screenModes;
-	UIScreen            *externalScreen;
 	EmulatorController	*hrViewController;
 }
-
-- (void)prepareScreen;
 
 @end

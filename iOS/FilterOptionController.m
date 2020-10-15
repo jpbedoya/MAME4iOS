@@ -43,21 +43,20 @@
  */
 
 #import "FilterOptionController.h"
+#import "Options.h"
+#if TARGET_OS_IOS
 #import "OptionsController.h"
+#elif TARGET_OS_TV
+#import "TVOptionsController.h"
+#endif
 #import "ListOptionController.h"
-
 #include "myosd.h"
 
 @implementation FilterOptionController
 
-@synthesize emuController;
-
 - (id)init {
-    if (self = [super initWithStyle:UITableViewStyleGrouped]) {
-        
-        switchFilterClones = nil;
-        switchFilterFavorites = nil;
-        switchFilterNotWorking = nil;
+    if (self = [super init]) {
+
         arrayManufacturerValue = [[NSMutableArray  alloc] initWithObjects:@"# All",nil];
         arrayYearGTEValue = [[NSMutableArray  alloc] initWithObjects:@"Any",nil];
         arrayYearLTEValue = [[NSMutableArray  alloc] initWithObjects:@"Any",nil];
@@ -94,34 +93,9 @@
     return self;
 }
 
-- (void)dealloc {
-    
-    [switchFilterClones release];
-    [switchFilterFavorites release];
-    [switchFilterNotWorking release];
-    [arrayManufacturerValue release];
-    [arrayYearGTEValue release];
-    [arrayYearLTEValue release];
-    [arrayDriverSourceValue release];
-    [arrayCategoryValue release];
-    
-    [super dealloc];
-}
-
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
     
     return 5;
-}
-
-- (void)loadView {
-    
-    [super loadView];
-    
-    UIBarButtonItem *button = [[UIBarButtonItem alloc] initWithTitle:@"Done"
-                                                               style:UIBarButtonItemStyleBordered
-                                                              target: emuController  action:  @selector(done:) ];
-    self.navigationItem.rightBarButtonItem = button;
-    [button release];
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
@@ -139,7 +113,7 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     
-    NSString *cellIdentifier = [NSString stringWithFormat: @"%d:%d", [indexPath indexAtPosition:0], [indexPath indexAtPosition:1]];
+    NSString *cellIdentifier = [NSString stringWithFormat: @"%lu:%lu", (unsigned long)[indexPath indexAtPosition:0], (unsigned long)[indexPath indexAtPosition:1]];
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
     
     if (cell == nil)
@@ -152,13 +126,12 @@
         else
             style = UITableViewCellStyleValue1;
         
-        cell = [[[UITableViewCell alloc] initWithStyle:style
-                                       reuseIdentifier:@"CellIdentifier"] autorelease];
+        cell = [[UITableViewCell alloc] initWithStyle:style reuseIdentifier:@"CellIdentifier"];
         
         cell.accessoryType = UITableViewCellAccessoryNone;
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
     }
-    
+    cell.accessoryView = nil;
     Options *op = [[Options alloc] init];
     
     switch (indexPath.section)
@@ -170,31 +143,19 @@
                 case 0:
                 {
                     cell.textLabel.text = @"Hide Non-Favorites";
-                    [switchFilterFavorites release];
-                    switchFilterFavorites  = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchFilterFavorites ;
-                    [switchFilterFavorites setOn:[op filterFavorites] animated:NO];
-                    [switchFilterFavorites addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.accessoryView = [self optionSwitchForKey:@"filterFavorites"];
                     break;
                 }
                 case 1:
                 {
                     cell.textLabel.text = @"Hide Clones";
-                    [switchFilterClones release];
-                    switchFilterClones  = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchFilterClones ;
-                    [switchFilterClones setOn:[op filterClones] animated:NO];
-                    [switchFilterClones addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.accessoryView = [self optionSwitchForKey:@"filterClones"];
                     break;
                 }
                 case 2:
                 {
                     cell.textLabel.text = @"Hide Not Working";
-                    [switchFilterNotWorking release];
-                    switchFilterNotWorking  = [[UISwitch alloc] initWithFrame:CGRectZero];
-                    cell.accessoryView = switchFilterNotWorking ;
-                    [switchFilterNotWorking setOn:[op filterNotWorking] animated:NO];
-                    [switchFilterNotWorking addTarget:self action:@selector(optionChanged:) forControlEvents:UIControlEventValueChanged];
+                    cell.accessoryView = [self optionSwitchForKey:@"filterNotWorking"];
                     break;
                 }
             }
@@ -212,13 +173,11 @@
             textField.autocapitalizationType = UITextAutocapitalizationTypeNone;
             textField.spellCheckingType = UITextSpellCheckingTypeNo;
             textField.clearButtonMode = UITextFieldViewModeNever;
-            textField.textAlignment = UITextAlignmentRight;
+            textField.textAlignment = NSTextAlignmentRight;
             textField.keyboardType = UIKeyboardTypeASCIICapable;
             textField.clearsOnBeginEditing = YES;
             textField.delegate = self;
             cell.accessoryView = textField;
-            [textField release];
-            
             break;
         }
         case 2:
@@ -278,29 +237,12 @@
         {
             cell.selectionStyle = UITableViewCellSelectionStyleBlue;
             cell.textLabel.text = @"Reset Filters to Default";
-            cell.textLabel.textAlignment = UITextAlignmentCenter;
+            cell.textLabel.textAlignment = NSTextAlignmentCenter;
             break;
         }
     }
     
-    [op release];
-    
     return cell;
-}
-
-- (void)optionChanged:(id)sender
-{
-    Options *op = [[Options alloc] init];
-    
-    if(sender == switchFilterClones)
-        op.filterClones = [switchFilterClones isOn];
-    if(sender == switchFilterFavorites)
-        op.filterFavorites = [switchFilterFavorites isOn];
-    if(sender == switchFilterNotWorking)
-        op.filterNotWorking = [switchFilterNotWorking isOn];
-    
-    [op saveOptions];
-	[op release];    
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -308,9 +250,12 @@
     NSUInteger row = [indexPath row];
     NSUInteger section = [indexPath section];
     
+    UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
+    
+    [self toggleOptionSwitch:cell.accessoryView];
+    
     if(section==1 && row==0)
     {
-        UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
         [(UITextField *)cell.accessoryView  becomeFirstResponder];
     }
     
@@ -319,14 +264,12 @@
                                                                                       type:kTypeYearGTEValue list:arrayYearGTEValue];
         
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     if (section==2 && row==1){
         ListOptionController *listController = [[ListOptionController alloc] initWithStyle:UITableViewStylePlain
                                                                                       type:kTypeYearLTEValue list:arrayYearLTEValue];
         
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     
     if (section==3 && row==0){
@@ -334,7 +277,6 @@
                                                                                       type:kTypeManufacturerValue list:arrayManufacturerValue];
         
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     
     if (section==3 && row==1){
@@ -342,7 +284,6 @@
                                                                                       type:kTypeDriverSourceValue list:arrayDriverSourceValue];
         
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     
     if (section==3 && row==2){
@@ -350,7 +291,6 @@
                                                                                       type:kTypeCategoryValue list:arrayCategoryValue];
         
         [[self navigationController] pushViewController:listController animated:YES];
-        [listController release];
     }
     
     if (section==4 && row==0){
@@ -367,18 +307,9 @@
         op.filterKeyword = nil;
         
         [op saveOptions];
-        [op release];
-        
         [tableView reloadData];
     }
 
-}
-
-
-- (void) viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-    UITableView *tableView = (UITableView *)self.view;
-    [tableView reloadData];
 }
 
 - (void) textFieldDidBeginEditing:(UITextField *)textField {
@@ -397,7 +328,6 @@
         else
             op.filterKeyword = [textField.text substringToIndex:MIN(MAX_FILTER_KEYWORD-1,textField.text.length)];
         [op saveOptions];
-        [op release];
     }
 }
 
@@ -411,7 +341,6 @@
     Options *op = [[Options alloc] init];
     op.filterKeyword = nil;
     [op saveOptions];
-    [op release];
     return YES;
 }
 

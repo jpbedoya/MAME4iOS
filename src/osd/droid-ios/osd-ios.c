@@ -46,13 +46,17 @@ int  myosd_video_width = 320;
 int  myosd_video_height = 240;
 int  myosd_vis_video_width = 320;
 int  myosd_vis_video_height = 240;
+int  myosd_display_width;
+int  myosd_display_height;
 int  myosd_in_menu = 0;
 int  myosd_res = 1;
 int  myosd_force_pxaspect = 0;
 
 int  myosd_pxasp1 = 1;
 int  myosd_service = 0;
-int  myosd_num_buttons = 0;
+int  myosd_configure = 0;
+int  myosd_mame_pause = 0;
+int  myosd_reset = 0;
 
 int myosd_video_threaded=-1;
 int myosd_dbl_buffer=1;
@@ -78,7 +82,12 @@ char myosd_filter_keyword[MAX_FILTER_KEYWORD] = {'\0'};
 
 int myosd_reset_filter = 0;
 
+int myosd_num_buttons = 0;
 int myosd_num_ways = 8;
+int myosd_num_players = 0;
+int myosd_num_coins = 0;
+int myosd_num_inputs = 0;
+
 
 int myosd_vsync = -1;
 int myosd_autofire=1;
@@ -94,14 +103,14 @@ char myosd_selected_game[MAX_GAME_NAME] = {'\0'};
 
 extern "C" unsigned long read_mfi_controller(unsigned long res);
 
-/*extern */float joy_analog_x[4][4];
-/*extern */float joy_analog_y[4][2];
+/*extern */float joy_analog_x[NUM_JOY][4];
+/*extern */float joy_analog_y[NUM_JOY][2];
 
-float lightgun_x[4];
-float lightgun_y[4];
+float lightgun_x[NUM_JOY];
+float lightgun_y[NUM_JOY];
 
-float mouse_x[4];
-float mouse_y[4];
+float mouse_x[NUM_JOY];
+float mouse_y[NUM_JOY];
 
 int myosd_mouse = 0;
 
@@ -111,13 +120,12 @@ static int isPause = 0;
 static int videot_running = 0;
 
 unsigned long myosd_pad_status = 0;
-unsigned long myosd_joy_status[4];
+unsigned long myosd_joy_status[NUM_JOY];
 unsigned short myosd_ext_status = 0;
 
-static unsigned short myosd_screen [1024 * 768 * 4];
-unsigned short 	*myosd_screen15 = NULL;
-
-extern unsigned short img_buffer[1024 * 768 * 4];
+unsigned short *myosd_curr_screen = NULL;
+unsigned short *myosd_prev_screen = NULL;
+unsigned short myosd_screen[MYOSD_BUFFER_WIDTH * MYOSD_BUFFER_HEIGHT * 2];
 
 typedef struct AQCallbackStruct {
     AudioQueueRef queue;
@@ -137,8 +145,10 @@ extern int video_thread_priority;
 extern int video_thread_priority_type;
 extern int global_low_latency_sound;
 
-extern "C" void iphone_UpdateScreen(void);
+// OSD functions located in the iOS/tvOS app
 extern "C" void iphone_Reset_Views(void);
+extern "C" void iphone_UpdateScreen(void);
+extern "C" int  iphone_DrawScreen(void*);
 extern "C" void droid_ios_video_thread(void);
 
 extern "C" void change_pause(int value);
@@ -151,28 +161,24 @@ void queue(unsigned char *p,unsigned size);
 unsigned short dequeue(unsigned char *p,unsigned size);
 inline int emptyQueue(void);
 
-
-static void dump_video(void)
-{
-
-
-    if(myosd_dbl_buffer && myosd_screen15!=NULL && img_buffer!=NULL)
-	   memcpy(img_buffer,myosd_screen15, myosd_video_width * myosd_video_height * 2);
-
-	iphone_UpdateScreen();
-}
-
-/////////////
-
 void myosd_video_flip(void)
 {
-	dump_video();
+    if (myosd_dbl_buffer)
+    {
+        myosd_prev_screen = myosd_curr_screen;
+        
+        if (myosd_curr_screen != myosd_screen)
+            myosd_curr_screen = myosd_screen;
+        else
+            myosd_curr_screen = myosd_screen + (MYOSD_BUFFER_WIDTH * MYOSD_BUFFER_HEIGHT);
+    }
+
+    iphone_UpdateScreen();
 }
 
 void myosd_set_video_mode(int width,int height,int vis_width,int vis_height)
 {
-
-     printf("myosd_set_video_mode: %d %d \n",width,height);
+     printf("myosd_set_video_mode: %dx%d [%dx%d]\n",width,height,vis_width,vis_height);
 
      myosd_video_width = width;
      myosd_video_height = height;
@@ -181,12 +187,13 @@ void myosd_set_video_mode(int width,int height,int vis_width,int vis_height)
 
      iphone_Reset_Views();
 
-     //if(myosd_screen15!=NULL)
-	    //memset(myosd_screen15, 0, width*height*2);
-
   	 myosd_video_flip();
 }
 
+int myosd_video_draw(void* prims)
+{
+    return iphone_DrawScreen(prims);
+}
 
 unsigned long myosd_joystick_read(int n)
 {
@@ -206,14 +213,13 @@ unsigned long myosd_joystick_read(int n)
 
     }
 
-	if (n<myosd_num_of_joys)
-	{
 #ifdef BTJOY
+	if (n<myosd_num_of_joys)
         res |= bt_joy_poll(n);
 #endif
-        res |= myosd_joy_status[n];
-	}
-    
+
+    res |= myosd_joy_status[n];
+
 	return res;
 }
 
@@ -265,10 +271,8 @@ void myosd_init(void)
 	   //myosd_set_video_mode(320,240,320,240);
         
        printf("myosd_dbl_buffer %d\n",myosd_dbl_buffer);
-	   if(myosd_dbl_buffer)
-	      myosd_screen15 = myosd_screen;
-	   else
-	      myosd_screen15 = img_buffer;
+       myosd_curr_screen = myosd_screen;
+       myosd_prev_screen = myosd_screen;
 
 	   if(videot_running==0)
 	   {
@@ -385,8 +389,8 @@ void* threaded_video(void* args)
 
 //SQ buffers for sound between MAME and iOS AudioQueue. AudioQueue
 //SQ callback reads from these.
-//SQ Size: (44100/30fps) * bytesize * stereo * (3 buffers)
-#define TAM (1470 * 2 * 2 * 3)
+//SQ Size: (48000/30fps) * bytesize * stereo * (3 buffers)
+#define TAM (1600 * 2 * 2 * 3)
 unsigned char ptr_buf[TAM];
 unsigned head = 0;
 unsigned tail = 0;

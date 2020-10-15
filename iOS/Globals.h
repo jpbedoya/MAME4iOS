@@ -45,6 +45,22 @@
 #ifndef MAME4iOS_Globals_h
 #define MAME4iOS_Globals_h
 
+/* define PRODUCT_NAME */
+
+#if TARGET_OS_MACCATALYST
+    #define PRODUCT_NAME        "MAME4mac"
+    #define PRODUCT_NAME_LONG   "MAME for macOS"
+#elif TARGET_OS_TV
+    #define PRODUCT_NAME        "MAME4tvOS"
+    #define PRODUCT_NAME_LONG   "MAME for AppleTV"
+#elif TARGET_OS_SIMULATOR
+    #define PRODUCT_NAME        "MAME4sim"
+    #define PRODUCT_NAME_LONG   "MAME for Simulator"
+#else
+    #define PRODUCT_NAME        "MAME4iOS"
+    #define PRODUCT_NAME_LONG   "MAME for iOS"
+#endif
+
 /* Convert between radians and degrees */
 #ifndef RAD_TO_DEGREE
 #define RAD_TO_DEGREE(r)	((r * 180.0f) / M_PI)
@@ -55,8 +71,8 @@
 
 #define absf(x)			    ((x >= 0) ? (x) : (x * -1.0f))
 
-#define NUM_BUTTONS 10
-#define NUM_DPAD_ELEMENTS 9
+#define NUM_JOY 4
+
 //#define STICK4WAY (myosd_waysStick == 4 && myosd_inGame)
 #define STICK4WAY (myosd_waysStick == 4 || !myosd_inGame || myosd_in_menu)
 #define STICK2WAY (myosd_waysStick == 2 && myosd_inGame && !myosd_in_menu)
@@ -66,11 +82,6 @@
 (point.y >= rect.origin.y) &&							\
 (point.x <= rect.origin.x + rect.size.width) &&			\
 (point.y <= rect.origin.y + rect.size.height)) ? 1 : 0)
-
-
-// See http://omegadelta.net/2011/11/04/oh-my-god-they-killed-parentviewcontroller/
-#define self_parentViewController (([self parentViewController] != nil || ![self respondsToSelector:@selector(presentingViewController)]) ? [self parentViewController] : [self presentingViewController])
-#define my_parentViewController(c) (([c parentViewController] != nil || ![c respondsToSelector:@selector(presentingViewController)]) ? [c parentViewController] : [c presentingViewController])
 
 extern int myosd_video_threaded;
 extern int myosd_video_width;
@@ -86,119 +97,48 @@ extern void change_pause(int value);
 extern int iOS_main (int argc, char **argv);
 
 extern unsigned long myosd_pad_status;
-extern unsigned long myosd_joy_status[4];
-extern float joy_analog_x[4][4];
-extern float joy_analog_y[4][2];
+extern unsigned long myosd_joy_status[NUM_JOY];
+extern float joy_analog_x[NUM_JOY][4];
+extern float joy_analog_y[NUM_JOY][2];
 
-extern int g_isIpad;
-extern int g_isIphone5;
+extern int g_isMetalSupported;
 
 extern int g_emulation_initiated;
 extern int g_emulation_paused;
 
 extern int g_joy_used;
 extern int g_iCade_used;
-extern int g_btjoy_available;
-
-extern int g_menu_option;
 
 extern int g_controller_opacity;
 extern int g_enable_debug_view;
 
 extern int g_device_is_landscape;
+extern int g_device_is_fullscreen;
 
-extern int g_pref_tv_filter_land;
-extern int g_pref_tv_filter_port;
-extern int g_pref_scanline_filter_land;
-extern int g_pref_scanline_filter_port;
-extern int g_pref_smooth_land;
-extern int g_pref_smooth_port;
-extern int g_pref_keep_aspect_ratio_land;
-extern int g_pref_keep_aspect_ratio_port;
+extern int g_pref_integer_scale_only;
+extern int g_pref_keep_aspect_ratio;
 extern int g_pref_full_screen_land;
 extern int g_pref_full_screen_port;
+extern int g_pref_full_screen_joy;
 extern int g_pref_animated_DPad;
-extern int g_pref_4buttonsLand;
 extern int g_pref_hide_LR;
 extern int g_pref_BplusX;
 extern int g_pref_full_num_buttons;
-extern int g_pref_skin;
-extern int g_pref_BT_DZ_value;
-extern int g_pref_touch_DZ;
 extern int g_pref_analog_DZ_value;
 extern int g_pref_input_touch_type;
 extern int g_pref_ext_control_type;
-extern int g_pref_aplusb;
+extern int g_pref_nintendoBAYX;
 extern int g_pref_nativeTVOUT;
 extern int g_pref_overscanTVOUT;
-extern int g_skin_data;
 
 extern float g_buttons_size;
 extern float g_stick_size;
 
-extern int ga_btnStates[NUM_BUTTONS];
-extern int g_dpad_state;
-
-enum { PORTRAIT_VIEW_FULL=0,
-    PORTRAIT_VIEW_NOT_FULL=1,
-    PORTRAIT_IMAGE_BACK=2,
-    PORTRAIT_IMAGE_OVERLAY=3,
-    LANDSCAPE_VIEW_FULL=4,
-    LANDSCAPE_VIEW_NOT_FULL=5,
-    LANDSCAPE_IMAGE_BACK=6,
-    LANDSCAPE_IMAGE_OVERLAY=7,
-    FRAME_RECT_LAST_VALUE=8
-};
-
-enum {
-    BTN_Y_RECT=0,
-    BTN_A_RECT=1,
-    BTN_X_RECT=2,
-    BTN_B_RECT=3,
-    BTN_A_Y_RECT=4,
-    BTN_X_A_RECT=5,
-    BTN_B_Y_RECT=6,
-    BTN_B_X_RECT=7,
-    DPAD_UP_RECT=8,
-    DPAD_LEFT_RECT=9,
-    DPAD_DOWN_RECT=10,
-    DPAD_RIGHT_RECT=11,
-    DPAD_UP_LEFT_RECT=12,
-    DPAD_DOWN_LEFT_RECT=13,
-    DPAD_UP_RIGHT_RECT=14,
-    DPAD_DOWN_RIGHT_RECT=15,
-    BTN_SELECT_RECT=16,
-    BTN_START_RECT=17,
-    BTN_L1_RECT=18,
-    BTN_R1_RECT=19,
-    BTN_L2_RECT=20,
-    BTN_R2_RECT=21,
-    BTN_MENU_RECT=22,
-    INPUT_LAST_VALUE=23
-};
-
-enum { BTN_B=0,BTN_X=1,BTN_A=2,BTN_Y=3,BTN_SELECT=4,BTN_START=5,BTN_L1=6,BTN_R1=7,BTN_L2=8,BTN_R2=9};
-enum { BUTTON_PRESS=0,BUTTON_NO_PRESS=1};
-enum { DPAD_NONE=0,DPAD_UP=1,DPAD_DOWN=2,DPAD_LEFT=3,DPAD_RIGHT=4,DPAD_UP_LEFT=5,DPAD_UP_RIGHT=6,DPAD_DOWN_LEFT=7,DPAD_DOWN_RIGHT=8};
-
-enum {
-    MENU_NONE               =  0,
-    MENU_EXIT               =  4,
-    MENU_HELP               =  5,
-    MENU_OPTIONS            =  6,
-    MENU_DONATE             =  9,
-    MENU_DOWNLOAD           = 11,
-    MENU_BTJOY            = 12};
-
-
 enum { TOUCH_INPUT_DPAD=0,TOUCH_INPUT_DSTICK=1, TOUCH_INPUT_ANALOG=2};
 
-enum { EXT_CONTROL_NONE=0,EXT_CONTROL_ICADE=1,EXT_CONTROL_ICP = 2,EXT_CONTROL_IMPULSE = 3};
+enum { EXT_CONTROL_NONE=0,EXT_CONTROL_ICADE=1,EXT_CONTROL_ICP=2,EXT_CONTROL_IMPULSE=3,EXT_CONTROL_8BITDO=4};
 
 extern const char* get_resource_path(const char* file);
 extern const char* get_documents_path(const char* file);
-
-extern int isGridlee;
-
 
 #endif

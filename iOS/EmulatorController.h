@@ -46,6 +46,21 @@
 
 #import "Globals.h"
 #import "ScreenView.h"
+#import "CGScreenView.h"
+#import "MetalScreenView.h"
+#import "GCDWebUploader.h"
+#import <GameController/GameController.h>
+
+enum {PORTRAIT_VIEW_FULL=0, PORTRAIT_VIEW_NOT_FULL, PORTRAIT_IMAGE_BACK,
+      LANDSCAPE_VIEW_FULL, LANDSCAPE_VIEW_NOT_FULL, LANDSCAPE_IMAGE_BACK,
+      NUM_FRAME_RECT};
+
+// button index
+enum {BTN_A,BTN_B,BTN_Y,BTN_X,BTN_L1,BTN_R1,
+      BTN_A_Y,BTN_A_X,BTN_B_Y,BTN_B_X,BTN_A_B,
+      BTN_SELECT,BTN_START,BTN_EXIT,BTN_OPTION,
+      BTN_STICK,
+      NUM_BUTTONS};
 
 @interface UINavigationController (KeyboardDismiss)
 
@@ -53,133 +68,114 @@
 
 @end
 
-@class DebugView;
+#if TARGET_OS_IOS
 @class AnalogStickView;
-@class iCadeView;
 @class LayoutView;
 @class NetplayGameKit;
+@class InfoHUD;
+#endif
 
-@interface EmulatorController : UIViewController <UIActionSheetDelegate>
+@class iCadeView;
+
+#if TARGET_OS_IOS
+@interface EmulatorController : UIViewController<GCDWebUploaderDelegate, UIDocumentPickerDelegate>
+#elif TARGET_OS_TV
+@interface EmulatorController : GCEventViewController<GCDWebUploaderDelegate>
+#endif
 {
-
-  ScreenView			* screenView;
+  @public UIView<ScreenView>* screenView;
   UIImageView	    * imageBack;
   UIImageView	    * imageOverlay;
-  DebugView         * dview;
+  UIImageView        * imageExternalDisplay;
+  UIImageView        * imageLogo;
+  UILabel            * fpsView;
+#if TARGET_OS_IOS
+  AnalogStickView   * analogStickView;
+    LayoutView        *layoutView;    
+    NetplayGameKit     *netplayHelper;
+    InfoHUD         * hudView;
+#endif
   @public UIView	* externalView;
-
-  UIImageView	    * dpadView;
+  UIView            * inputView;    // parent view of all the input views
   UIImageView	    * buttonViews[NUM_BUTTONS];
 
-  AnalogStickView   * analogStickView;
     
   iCadeView         *icadeView;
     
-  LayoutView        *layoutView;
-    
-  NetplayGameKit     *netplayHelper;
 
-  UIActionSheet     *menu;
-  
-  //input rects
-  CGRect rInput[INPUT_LAST_VALUE];
-    
-  //current rect emulation window
-  CGRect rScreenView;
-    
   //views frames
-  CGRect rFrames[FRAME_RECT_LAST_VALUE];
-
-  //buttons & Dpad images & states
-  CGRect rDPadImage;
-  NSString *nameImgDPad[NUM_DPAD_ELEMENTS];
-
-  CGRect rButtonImages[NUM_BUTTONS];
+  CGRect rFrames[NUM_FRAME_RECT];
+    
+  //input rects
+  CGRect rInput[NUM_BUTTONS];
+    
+  //button rects (will mostly be identical to rInput)
+  CGRect rButton[NUM_BUTTONS];
 
   NSString *nameImgButton_Press[NUM_BUTTONS];
   NSString *nameImgButton_NotPress[NUM_BUTTONS];
     
-  int dpad_state;
-  int old_dpad_state;
-    
-  
-  int old_btnStates[NUM_BUTTONS];
-    
   //analog stick stuff
   int stick_radio;
-  CGRect rStickWindow;
-  CGRect rStickArea;
-    
-  //tvout external view
-  CGRect RectExternalView;
-    
-  //input debug stuff
-  CGRect debug_rects[100];
-  int num_debug_rects;
     
   UIButton *hideShowControlsForLightgun;
   BOOL areControlsHidden;
 
 }
 
-- (int *)getBtnStates;
-- (CGRect *)getInputRects;
-- (CGRect *)getButtonRects;
-- (UIView **)getButtonViews;
-- (UIView *)getDPADView;
-- (UIView *)getStickView;
++ (NSArray<NSString*>*)romList;
 
-- (void)getControllerCoords:(int)orientation;
-
-- (void)getConf;
-- (void)filldebugRects;
+#if TARGET_OS_IOS
+// editing interface used by LayoutView
+- (NSString*)getButtonName:(int)i;
+- (CGRect) getButtonRect:(int)i;
+- (void)setButtonRect:(int)i rect:(CGRect)rect;
+#endif
 
 - (void)startEmulation;
+- (void)stopEmulation;
 
 - (void)done:(id)sender;
 
-- (void)removeTouchControllerViews;
-- (void)buildTouchControllerViews;
-
 - (void)changeUI;
 
-- (void)buildPortraitImageBack;
-- (void)buildPortraitImageOverlay;
-- (void)buildPortrait;
-- (void)buildLandscapeImageOverlay;
-- (void)buildLandscapeImageBack;
-- (void)buildLandscape;
-
 - (void)runMenu;
+- (void)runExit;
+- (void)runPause;
+- (void)runServer;
+- (void)runReset;
 - (void)endMenu;
+#if TARGET_OS_IOS
+- (void)runImport;
+- (void)runExport;
+- (void)runExportSkin;
+#endif
 
-- (void)handle_DPAD;
-- (void)handle_MENU;
-
-- (void)touchesController:(NSSet *)touches withEvent:(UIEvent *)event;
+- (void)handle_INPUT;
+- (void)commandKey:(char)key;
 
 - (void)updateOptions;
 
-- (CGRect *)getDebugRects;
-
 - (UIImage *)loadImage:(NSString *)name;
-- (FILE *)loadFile:(const char *)name;
 
 - (void)moveROMS;
+- (void)playGame:(NSDictionary*)game;
+- (void)chooseGame:(NSArray*)games;
 
+#if TARGET_OS_IOS
+- (NSSet*)touchesController:(NSSet *)touches withEvent:(UIEvent *)event;
 - (void)beginCustomizeCurrentLayout;
 - (void)finishCustomizeCurrentLayout;
+- (void)saveCurrentLayout;
 - (void)resetCurrentLayout;
-
 - (void)adjustSizes;
+#endif
 
-@property (readwrite,assign)  UIView *externalView;
-@property (readwrite,assign) int dpad_state;
-@property (readonly,assign) int num_debug_rects;
-@property (readwrite,assign) CGRect rExternalView;
+@property (readwrite,strong)  UIView *externalView;
 @property (readonly,assign) int stick_radio;
-//@property (readonly,assign) CGRect rStickArea;
-@property (assign) CGRect rStickWindow;
-@property (assign) CGRect rDPadImage;
+#if TARGET_OS_IOS
+@property (strong, nonatomic) UIImpactFeedbackGenerator* impactFeedback;
+@property (strong, nonatomic) UISelectionFeedbackGenerator* selectionFeedback;
+#endif
 
 @end

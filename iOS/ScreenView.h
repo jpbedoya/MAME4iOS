@@ -42,25 +42,52 @@
  * under a MAME license, as set out in http://mamedev.org/
  */
 
+#ifndef __SCREENVIEW_H__
+#define __SCREENVIEW_H__
+
 #import <UIKit/UIKit.h>
 #import <QuartzCore/CALayer.h>
 
-@interface ScreenLayer : CALayer {
-	CGAffineTransform rotateTransform;
-	CGContextRef bitmapContext;
-}
+#define kScreenViewFilter           @"filter"
+#define kScreenViewScreenShader     @"screen-shader"
+#define kScreenViewLineShader       @"line-shader"
+#define kScreenViewColorSpace       @"colorspace"
 
-- (void) orientationChanged:(NSNotification *)notification;
+#define kScreenViewFilterNearest    @"Nearest"
+#define kScreenViewFilterLinear     @"Linear"
+
+#define kScreenViewShaderNone       @"None"
+#define kScreenViewShaderDefault    @"Default"
+
+#define kScreenViewColorSpaceDefault @"Default"
+
+@protocol ScreenView <NSObject>
+
+// the Settings UI will let the user choose from these, format of a entry is is:
+//
+//      <Friendly Name> : <Data>
+//
+// only the <Friendly Name> will be shown to the user, the <Data> will be passed
+// in the setOptions: NSDictionary
+//
++ (NSArray<NSString*>*)filterList;
++ (NSArray<NSString*>*)screenShaderList;
++ (NSArray<NSString*>*)lineShaderList;
++ (NSArray<NSString*>*)colorSpaceList;
+
+- (void)setOptions:(NSDictionary*)options;
+
+// frame and render statistics
+@property(readwrite) NSUInteger frameCount;         // total frames drawn.
+@property(readonly)  CGFloat    frameRate;          // time it took last frame to draw (1/sec)
+@property(readonly)  CGFloat    frameRateAverage;   // average frameRate
+@property(readonly)  CGFloat    renderTime;         // time it took last frame to render (sec)
+@property(readonly)  CGFloat    renderTimeAverage;  // average renderTime
+
+// return 1 if you handled the draw, 0 for a software render
+// NOTE this is called on MAME background thread, dont do anything stupid.
+- (int)drawScreen:(void*)primitives;
 
 @end
 
-@interface ScreenView : UIView
-{
-}
-
-- (id)initWithFrame:(CGRect)frame;
-- (void)drawRect:(CGRect)rect;
-
-@property (nonatomic, copy) void (^didUpdateScreenCallback)();
-
-@end
+#endif

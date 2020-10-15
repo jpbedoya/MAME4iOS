@@ -45,32 +45,15 @@
 #import <UIKit/UIKit.h>
 #import "EmulatorController.h"
 
-typedef enum
-{
-    StickNone,
-    StickRight,
-    StickUpRight,
-    StickUp,
-    StickUpLeft,
-    StickLeft,
-    StickDownLeft,
-    StickDown,
-    StickDownRight
-} StickDirection;
-
 @interface AnalogStickView : UIView
 {
-    StickDirection currentDirection;
-
     UIImageView *outerView;
     UIImageView *innerView;
-    CGRect stickPos;
-
-    CGPoint ptCur;
 
     CGPoint ptCenter;
     CGPoint ptMin;
     CGPoint ptMax;
+
     int stickWidth;
     int stickHeight;
     float deadZone;
@@ -83,7 +66,7 @@ typedef enum
 }
 
 - (id)initWithFrame:(CGRect)frame withEmuController:(EmulatorController*)emulatorController;
-- (void)calculateStickPosition:(CGPoint)pt;
 - (void)analogTouches:(UITouch *)touch withEvent:(UIEvent *)event;
+- (void)update;
 
 @end

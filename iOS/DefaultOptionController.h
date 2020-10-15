@@ -43,31 +43,10 @@
  */
 
 #import <UIKit/UIKit.h>
+#import "OptionsTableViewController.h"
 
 @class EmulatorController;
 
-@interface DefaultOptionController : UITableViewController {
-    
-    UISwitch*  switchVBean2x;
-    UISwitch*  switchVAntialias;
-    UISwitch*  switchVFlicker;
-    
-    NSArray  *arraySoundValue;
-    UISwitch *switchCheats;
-    UISwitch *switchVsync;
-    UISwitch *switchHiscore;
-    
-    UISwitch *switchTvoutNative;
-    UISwitch *switchThreaded;
-    UISwitch *switchDblbuff;
-    NSArray  *arrayVideoPriorityValue;
-    NSArray  *arrayMainPriorityValue;
-    
-    NSArray  *arrayMainThreadTypeValue;
-    NSArray  *arrayVideoThreadTypeValue;
-    
-}
-
-@property (nonatomic, assign) EmulatorController *emuController;
+@interface DefaultOptionController : OptionsTableViewController
 
 @end
